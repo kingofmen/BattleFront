@@ -2,6 +2,7 @@
 #define ARMY_HH
 #include <vector>
 #include "utils.hh" 
+#include "Tile.hh" 
 
 using namespace std;
 
@@ -9,18 +10,20 @@ struct Army {
   Army ();
   ~Army (); 
 
-  double supplies1; 
-  double supplies2; 
+  double supplies; 
   point position; 
-  point advance; 
+  bool player; 
 
-  double fight (int elapsedTime); 
+
+  void update (int elapsedTime); 
   static Army* getClosest (const point& pt); 
   typedef vector<Army*>::iterator Iter;
-  static Iter begin () {return allArmies.begin();}
+  static Iter start () {return allArmies.begin();}
   static Iter final () {return allArmies.end();} 
 
 private:
+  Tile* tile; 
+
   static double speed; // In pixels per microsecond
   static double maxAdvance; 
   static vector<Army*> allArmies; 

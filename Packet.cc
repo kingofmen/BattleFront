@@ -14,8 +14,7 @@ bool Packet::update (int elapsedTime) {
  
   double distance = position.distance(target->position);
   if (speed*elapsedTime > distance) {
-    if (player1) target->supplies1 += size;
-    else target->supplies2 += size; 
+    target->supplies += size;
     return true; 
   }
   else {
