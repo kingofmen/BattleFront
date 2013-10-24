@@ -17,7 +17,9 @@ struct point : public boost::tuple<double, double> {
 
   double angle (const point& other) const; 
   double distance (const point& other) const;
+  double distanceSq (const point& other) const;
   double length () const;
+  double lengthSq () const;
   void normalise ();
   void rotate (double angle); // Clockwise rotation
   point& operator+= (const point& other);
@@ -28,6 +30,16 @@ struct point : public boost::tuple<double, double> {
 
 inline point operator+ (point one, const point& two) {
   one += two;
+  return one; 
+}
+
+inline point operator* (point one, const double two) {
+  one *= two;
+  return one; 
+}
+
+inline point operator/ (point one, const double two) {
+  one /= two;
   return one; 
 }
 

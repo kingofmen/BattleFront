@@ -23,12 +23,20 @@ double point::angle (const point& other) const {
   return acos(dot); 
 }
 
+double point::distanceSq (const point& other) const {
+  return pow(x() - other.x(), 2) + pow(y() - other.y(), 2); 
+}
+
 double point::distance (const point& other) const {
-  return sqrt(pow(x() - other.x(), 2) + pow(y() - other.y(), 2)); 
+  return sqrt(distanceSq(other)); 
+}
+
+double point::lengthSq () const {
+  return pow(x(), 2) + pow(y(), 2);
 }
 
 double point::length () const {
-  return sqrt(pow(x(), 2) + pow(y(), 2));
+  return sqrt(lengthSq()); 
 }
 
 void point::normalise () {
