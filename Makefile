@@ -1,0 +1,31 @@
+#------------------------------------------------------------------------------
+CXX=g++ 
+LD=g++  
+
+CXXFLAGS     = -O3 
+SDLLIBS = $(shell sdl2-config --libs)
+SDLFLAGS = $(shell sdl2-config --cflags)
+CXXFLAGS += $(SDLFLAGS)
+
+ifneq ($(DEBUG),)
+CXXFLAGS += -g -fno-inline
+endif
+
+
+INCLUDES += -I$(PWD) -I/usr/include/boost/ -I/usr/include/GL/ 
+LIBS += -L/usr/lib/ -lGL $(SDLLIBS)
+
+.SUFFIXES: 
+.PHONY:		clean 
+
+%.o:	%.cc
+	$(CXX) $(INCLUDES) $(CXXFLAGS) -c $< -o $@ 
+
+front:	gfront.o utils.o Army.o Packet.o Factory.o 
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
+
+
+clean:	
+	@rm -f *.o front 
+
