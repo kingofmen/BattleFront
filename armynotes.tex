@@ -1,0 +1,45 @@
+\section{Basic design}
+
+The base mechanic is armies, which have
+\begin{itemize}
+\item Size
+\item Position
+\item Facing
+\item Freshness
+\end{itemize}
+
+Each iteration, each army does damage to all enemy armies
+within \$DISTANCE. Damage is proportional to size and freshness,
+inversely to square of distance, and (1+\cos\theta) where \theta
+is the angle between the inflicting army's facing and the line between
+the centers of the armies. Damage takes the form of reducing size
+and changing position by moving the damaged army away from the inflicting one. 
+The proportion depends on the stance of the army, from
+"attack at all costs" (90\% size damage) to "elastic defense" (10\% size). 
+In hard terrain position damage is reduced. 
+
+Armies always advance along their facing if there is no enemy army within
+\$DISTANCE2, and if they don't have defensive-type orders. 
+
+Freshness is updated when the army receives reinforcements (which also represent
+supplies). Reinforcements are created at a central location and move across 
+roads and rail to their target army, shrinking all the while. The closer a reinforcement
+unit is to an enemy one, the more it shrinks. 
+
+User input:
+\begin{itemize}
+\item Facing of armies
+\item Destination of reinforcements
+\item Production priority between reinforcement and infrastructure
+\item Aggression of armies
+\end{itemize}
+
+Victory consists in having an army within \$DISTANCE of the enemy's 
+reinforcement location. 
+
+\section{AI}
+
+
+
+
+
