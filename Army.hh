@@ -15,7 +15,10 @@ struct Army {
   bool player; 
 
 
-  void update (int elapsedTime); 
+  void fight (int elapsedTime); 
+  void influence (int elapsedTime); 
+  void advance (int elapsedTime); 
+
   static Army* getClosest (const point& pt); 
   typedef vector<Army*>::iterator Iter;
   static Iter start () {return allArmies.begin();}
@@ -23,6 +26,8 @@ struct Army {
 
 private:
   Tile* tile; 
+
+  bool testForEnemy (Vertex const* const vert, point& direction);
 
   static double speed; // In pixels per microsecond
   static double maxAdvance; 

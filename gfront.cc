@@ -18,16 +18,32 @@ using namespace std;
 const int frontSize = 25; 
 const int windowWidth = 1080;
 const int windowHeight = 770; 
+const int tileSize = 10; 
+const int gridWidth = windowWidth / tileSize;
+const int gridHeight = windowHeight / tileSize;
+
 
 void drawTiles () {
   glBegin(GL_QUADS);
   for (Tile::Iter tile = Tile::start(); tile != Tile::final(); ++tile) {
     for (int i = 0; i < 4; ++i) {
+      //cout << "Drawing " << (*tile) << " " << i << " " << (*tile)->corners[i] << endl; 
       glColor3d((*tile)->corners[i]->playerControl, 0.0, 1.0 - (*tile)->corners[i]->playerControl); 
       glVertex2d((*tile)->corners[i]->position.x(), (*tile)->corners[i]->position.y()); 
     }
   }
   glEnd(); 
+}
+
+void drawGrid () {
+  glColor3d(1.0, 1.0, 1.0); 
+  for (Tile::Iter tile = Tile::start(); tile != Tile::final(); ++tile) {
+    glBegin(GL_LINE_LOOP);
+    for (int i = 0; i < 4; ++i) {
+      glVertex2d((*tile)->corners[i]->position.x(), (*tile)->corners[i]->position.y()); 
+    }
+    glEnd(); 
+  }
 }
 
 void drawFactories (vector<Factory>& factories) {
@@ -69,29 +85,26 @@ void drawArmies () {
   glEnd(); 
 }
 
-
 int main (int argc, char** argv) {
   vector<Factory> factories; 
   vector<Packet*> packets; 
 
-  const int tileSize = 10; 
-  const int gridWidth = windowWidth / tileSize;
-  const int gridHeight = windowHeight / tileSize;
 
-  Vertex* grid[(gridWidth+1)*(gridHeight+1)];
+  Vertex** grid[gridWidth+1];
+  for (int i = 0; i <= gridWidth; ++i) grid[i] = new Vertex*[gridHeight+1];
   for (int xpos = 0; xpos <= gridWidth; ++xpos) {
     for (int ypos = 0; ypos <= gridHeight; ++ypos) {
-      grid[gridWidth*ypos + xpos] = new Vertex(point(xpos*10, ypos*10), (xpos < 54 ? 1.0 : (xpos == 54 ? 0.5 : 0))); 
+      grid[xpos][ypos] = new Vertex(point(xpos*tileSize, ypos*tileSize), (xpos < 54 ? 1.0 : (xpos == 54 ? 0.5 : 0))); 
     }
   }
 
   for (int xpos = 0; xpos < gridWidth; ++xpos) {
     for (int ypos = 0; ypos < gridHeight; ++ypos) {
-      Tile* curr = new Tile(grid[(ypos+0)*gridWidth+(xpos+0)],
-			    grid[(ypos+0)*gridWidth+(xpos+1)],
-			    grid[(ypos+1)*gridWidth+(xpos+1)],
-			    grid[(ypos+1)*gridWidth+(xpos+0)]);
-	
+      Tile* curr = new Tile(grid[xpos+0][ypos+0],
+			    grid[xpos+1][ypos+0],
+			    grid[xpos+1][ypos+1],
+			    grid[xpos+0][ypos+1]);
+      
     }
   }
 
@@ -111,16 +124,16 @@ int main (int argc, char** argv) {
   fac2.position = point(800, 400); 
   factories.push_back(fac2); 
 
-  for (int i = 0; i < frontSize; ++i) {
+  for (int i = 0; i < frontSize-1; ++i) {
     Army* curr = new Army();
     curr->supplies = 100;
     curr->player = true; 
-    curr->position = point(windowWidth/2 - 15, 5 + windowHeight*(1.0 / (frontSize-1))*i); 
+    curr->position = point(windowWidth/2 - 15, 1 + windowHeight*(1.0 / (frontSize-1))*i); 
 
     curr = new Army();
     curr->supplies = 100;
     curr->player = false; 
-    curr->position = point(windowWidth/2 + 15, 5 + windowHeight*(1.0 / (frontSize-1))*i); 
+    curr->position = point(windowWidth/2 + 15, 1 + windowHeight*(1.0 / (frontSize-1))*i); 
   }
 
   int error = SDL_Init(SDL_INIT_EVERYTHING);
@@ -156,6 +169,7 @@ int main (int argc, char** argv) {
     drawFactories(factories); 
     drawPackets(packets); 
     drawArmies(); 
+    //drawGrid(); 
     SDL_GL_SwapWindow(win); 
 
     if (!paused) {
@@ -173,9 +187,17 @@ int main (int argc, char** argv) {
 	packets.pop_back(); 
       }
       
-      for (Army::Iter army = Army::start(); army != Army::final(); ++army) {
-	(*army)->update(timeThisFrame); 
+      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->fight(timeThisFrame); 
+      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->influence(timeThisFrame); 
+
+      for (int xpos = 0; xpos <= gridWidth; ++xpos) {
+	for (int ypos = 0; ypos <= gridHeight; ++ypos) {
+	  grid[xpos][ypos]->renormalise();
+	}
       }
+
+      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->advance(timeThisFrame); 
+
 
       for (unsigned int i = 0; i < factories.size(); ++i) {
 	factories[i].produce(timeThisFrame, packets);
