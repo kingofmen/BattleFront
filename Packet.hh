@@ -5,7 +5,7 @@
 
 using namespace std; 
 class Army; 
-
+class Tile; 
 
 struct Packet {
   Packet (); 
@@ -14,6 +14,7 @@ struct Packet {
   int size;
   point position; 
   Army* target; 
+  Tile* tile; 
 
   bool update (int elapsedTime); 
 

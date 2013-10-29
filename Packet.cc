@@ -1,11 +1,14 @@
 #include "Packet.hh"
 #include "Army.hh" 
+#include "Tile.hh" 
+#include <cmath> 
 
 double Packet::speed = 0.0001; 
 vector<Packet*> Packet::allPackets; 
 
 Packet::Packet () 
   : target(0) 
+  , tile(0)
 {
   allPackets.push_back(this);
 }
@@ -20,22 +23,30 @@ Packet::~Packet () {
 }
 
 bool Packet::update (int elapsedTime) {
-  if (!target) {
-    target = Army::getClosestFriendly(position, player1);
-  }
+  if (!target) target = Army::getClosestFriendly(position, player1);
+  tile = Tile::getClosest(position, tile);
  
+  double totalInfluence = 0; 
+  for (Tile::VertIter vert = tile->startv(); vert != tile->finalv(); ++vert) {
+    totalInfluence += (*vert)->myControl(player1); 
+  }
+  totalInfluence *= 0.25; // Max influence is 4
+  size = (int) floor(size * totalInfluence + 0.5); 
+  if (1 > size) return true; 
+
   double distance = position.distance(target->position);
   if (speed*elapsedTime > distance) {
     target->supplies += size;
     return true; 
   }
-  else {
-    point dirVector = target->position;
-    dirVector -= position;
-    dirVector.normalise(); 
-    dirVector *= speed*elapsedTime; 
-    position += dirVector; 
-  }
+
+  
+
+  point dirVector = target->position;
+  dirVector -= position;
+  dirVector.normalise(); 
+  dirVector *= speed*elapsedTime; 
+  position += dirVector; 
   
   return false; 
 }
