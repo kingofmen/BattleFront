@@ -1,7 +1,7 @@
 #include "Factory.hh"
 #include "Packet.hh" 
 
-void Factory::produce (int elapsedTime, vector<Packet*>& packets) {
+void Factory::produce (int elapsedTime) {
   timeSinceProduction += elapsedTime;
   if (timeSinceProduction < timeToProduce) return; 
   timeSinceProduction -= timeToProduce; 
@@ -10,6 +10,5 @@ void Factory::produce (int elapsedTime, vector<Packet*>& packets) {
   product->size = packetSize;
   product->position = position;
   product->player1 = player1; 
-  packets.push_back(product); 
 }
 

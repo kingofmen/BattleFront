@@ -98,21 +98,19 @@ void Army::advance (int elapsedTime) {
       goodEnough |= testForEnemy((*vert), direction, totalWeight);
     }
   }
-  /*
+  
   for (Iter army = start(); army != final(); ++army) {
     if ((*army)->player == player) continue; 
     point line = (*army)->position; // Points from us to them 
     line -= position;
     double distanceSq = line.lengthSq(); 
-    if (distanceSq > radiusSq) continue;
+    if (distanceSq > 1e4) continue;
+    goodEnough = true; 
     line.normalise(); 
-    double pushThem = supplies / (1 + (*army)->supplies);
-    totalCombat += (*army)->supplies / (0.001 + sqrt(distanceSq / radiusSq)); 
-    (*army)->move(line*pushThem);; 
-    pushThem = (-1.0) / pushThem; 
-    move(line*pushThem); 
+    direction += line;
+    totalWeight += 1;
   }
-  */
+  
   if (goodEnough) {
     direction /= totalWeight;  
     direction.normalise();

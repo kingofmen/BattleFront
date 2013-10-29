@@ -13,7 +13,7 @@ struct Factory {
   int packetSize; 
   point position; 
 
-  void produce (int elapsedTime, vector<Packet*>& packets);
+  void produce (int elapsedTime);
 };
 
 

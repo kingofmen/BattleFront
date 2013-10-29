@@ -59,15 +59,15 @@ void drawFactories (vector<Factory>& factories) {
   glEnd(); 
 }
 
-void drawPackets (vector<Packet*>& packets) {
+void drawPackets () {
   glBegin(GL_TRIANGLES);
-  for (unsigned int i = 0; i < packets.size(); ++i) {
-    if (packets[i]->player1) glColor3d(0.0, 0.0, 1.0);
+  for (Packet::Iter p = Packet::start(); p != Packet::final(); ++p) {
+    if ((*p)->player1) glColor3d(0.0, 0.0, 1.0);
     else glColor3d(1.0, 0.0, 0.0);
 
-    glVertex2d(packets[i]->position.x() + 0.0, packets[i]->position.y() - 2.9);
-    glVertex2d(packets[i]->position.x() + 2.5, packets[i]->position.y() + 2.1);
-    glVertex2d(packets[i]->position.x() - 2.5, packets[i]->position.y() + 2.1);
+    glVertex2d((*p)->position.x() + 0.0, (*p)->position.y() - 2.9);
+    glVertex2d((*p)->position.x() + 2.5, (*p)->position.y() + 2.1);
+    glVertex2d((*p)->position.x() - 2.5, (*p)->position.y() + 2.1);
   }
   glEnd(); 
 }
@@ -87,8 +87,6 @@ void drawArmies () {
 
 int main (int argc, char** argv) {
   vector<Factory> factories; 
-  vector<Packet*> packets; 
-
 
   Vertex** grid[gridWidth+1];
   for (int i = 0; i <= gridWidth; ++i) grid[i] = new Vertex*[gridHeight+1];
@@ -167,7 +165,7 @@ int main (int argc, char** argv) {
     glColor3d(1.0, 0.0, 0.0); 
     drawTiles();
     drawFactories(factories); 
-    drawPackets(packets); 
+    drawPackets(); 
     drawArmies(); 
     //drawGrid(); 
     SDL_GL_SwapWindow(win); 
@@ -176,15 +174,13 @@ int main (int argc, char** argv) {
       // Why do it this way? Because I get errors I don't understand
       // when I just use 'erase' within the loop. Don't mess with the
       // iterators. 
-      vector<unsigned int> toErase;
-      for (unsigned int i = 0; i < packets.size(); ++i) {
-	if (!packets[i]->update(timeThisFrame)) continue;
-	toErase.push_back(i); 
+      vector<Packet*> toErase;
+      for (Packet::Iter pack = Packet::start(); pack != Packet::final(); ++pack) {
+	if (!(*pack)->update(timeThisFrame)) continue;
+	toErase.push_back(*pack); 
       }
-      for (int i = -1 + toErase.size(); i >= 0; --i) {
-	delete packets[toErase[i]];
-	packets[toErase[i]] = packets.back(); 
-	packets.pop_back(); 
+      for (vector<Packet*>::iterator p = toErase.begin(); p != toErase.end(); ++p) {
+	delete (*p);
       }
       
       for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->fight(timeThisFrame); 
@@ -200,7 +196,7 @@ int main (int argc, char** argv) {
 
 
       for (unsigned int i = 0; i < factories.size(); ++i) {
-	factories[i].produce(timeThisFrame, packets);
+	factories[i].produce(timeThisFrame);
       }
     }
 
