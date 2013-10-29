@@ -9,7 +9,7 @@ Packet::Packet ()
 
 bool Packet::update (int elapsedTime) {
   if (!target) {
-    target = Army::getClosest(position);
+    target = Army::getClosestFriendly(position, player1);
   }
  
   double distance = position.distance(target->position);
