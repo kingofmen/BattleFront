@@ -31,8 +31,16 @@ bool Packet::update (int elapsedTime) {
     totalInfluence += (*vert)->myControl(player1); 
   }
   totalInfluence *= 0.25; // Max influence is 4
-  size = (int) floor(size * totalInfluence + 0.5); 
-  if (1 > size) return true; 
+  if (totalInfluence < 0.1) {
+    size /= 2;
+    player1 = !player1; 
+    target = 0;
+    return false; 
+  }
+  else {
+    size = (int) floor(size * totalInfluence + 0.5); 
+    if (1 > size) return true; 
+  }
 
   double distance = position.distance(target->position);
   if (speed*elapsedTime > distance) {
