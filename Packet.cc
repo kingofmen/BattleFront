@@ -40,7 +40,12 @@ bool Packet::update (int elapsedTime) {
     return true; 
   }
 
-  
+  Army* closestEnemy = Army::getClosestEnemy(position, player1); 
+  double distanceSq = closestEnemy->position.distanceSq(position); 
+  if (distanceSq < 25) {
+    closestEnemy->supplies += size/2; 
+    return true; 
+  }
 
   point dirVector = target->position;
   dirVector -= position;

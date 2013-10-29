@@ -144,3 +144,16 @@ Army* Army::getClosestFriendly (const point& pt, bool player) {
   }
   return target; 
 }
+
+Army* Army::getClosestEnemy (const point& pt, bool player) {
+  Army* target = 0; 
+  double distance = 1e20; 
+  for (unsigned int i = 0; i < allArmies.size(); ++i) {
+    if (allArmies[i]->player == player) continue;
+    double currDist = pt.distance(allArmies[i]->position);
+    if (currDist > distance) continue;
+    distance = currDist;
+    target = allArmies[i]; 
+  }
+  return target; 
+}

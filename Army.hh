@@ -21,6 +21,7 @@ struct Army {
 
   static Army* getClosest (const point& pt); 
   static Army* getClosestFriendly (const point& pt, bool player); 
+  static Army* getClosestEnemy    (const point& pt, bool player); 
   typedef vector<Army*>::iterator Iter;
   static Iter start () {return allArmies.begin();}
   static Iter final () {return allArmies.end();} 
