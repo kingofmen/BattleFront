@@ -76,10 +76,30 @@ bool Army::testForEnemy (Vertex const* const vert, point& direction, double& tot
 }
 
 void Army::advance (int elapsedTime) {
-  // Are there enemy vertices in the local tile? 
   point direction;
   bool goodEnough = false; 
   double totalWeight = 0; 
+
+  // Move towards nearest enemy army
+  Army* nearest = getClosestEnemy(position, player);
+  if (nearest) {
+    point line = nearest->position; // Points from us to them 
+    line -= position;
+    double distanceSq = line.lengthSq(); 
+    if (distanceSq < 1e4) {
+      goodEnough = true; 
+      direction = line;
+    }
+  }
+
+  if (goodEnough) {
+    direction.normalise(); 
+    direction *= speed*elapsedTime; 
+    move(direction);
+    return; 
+  }
+
+  // Are there enemy vertices in the local tile? 
   for (Tile::VertIter vert = tile->startv(); vert != tile->finalv(); ++vert) {
     goodEnough |= testForEnemy((*vert), direction, totalWeight);
   }
@@ -99,17 +119,6 @@ void Army::advance (int elapsedTime) {
     }
   }
   
-  for (Iter army = start(); army != final(); ++army) {
-    if ((*army)->player == player) continue; 
-    point line = (*army)->position; // Points from us to them 
-    line -= position;
-    double distanceSq = line.lengthSq(); 
-    if (distanceSq > 1e4) continue;
-    goodEnough = true; 
-    line.normalise(); 
-    direction += line;
-    totalWeight += 1;
-  }
   
   if (goodEnough) {
     direction /= totalWeight;  
