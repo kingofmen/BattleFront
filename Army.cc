@@ -9,6 +9,7 @@ vector<Army*> Army::allArmies;
 Army::Army () 
   : position(0, 0) 
   , tile(0) 
+  , usedSupplies(0)
 {
   allArmies.push_back(this); 
 } 
@@ -44,7 +45,12 @@ void Army::fight (int elapsedTime) {
   // supplies in five seconds. Not fighting, it runs down half
   // its supplies in a minute. 
   totalCombat /= supplies;
-  supplies *= pow(0.5, elapsedTime*(totalCombat*2e-7 + 1.667e-8)); 
+  usedSupplies += supplies*(1 - pow(0.5, elapsedTime*(totalCombat*2e-7 + 1.667e-8)));
+}
+
+void Army::updateSupplies () {
+  supplies -= usedSupplies;
+  usedSupplies = 0; 
   if (supplies < 1) supplies = 1; 
 }
 
@@ -118,7 +124,6 @@ void Army::advance (int elapsedTime) {
       goodEnough |= testForEnemy((*vert), direction, totalWeight);
     }
   }
-  
   
   if (goodEnough) {
     direction /= totalWeight;  

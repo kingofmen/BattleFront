@@ -18,6 +18,7 @@ struct Army {
   void fight (int elapsedTime); 
   void influence (int elapsedTime); 
   void advance (int elapsedTime); 
+  void updateSupplies (); 
 
   static Army* getClosest (const point& pt); 
   static Army* getClosestFriendly (const point& pt, bool player); 
@@ -28,6 +29,7 @@ struct Army {
 
 private:
   Tile* tile; 
+  double usedSupplies; 
 
   void move (const point& amount); 
   bool testForEnemy (Vertex const* const vert, point& direction, double& totalWeight);

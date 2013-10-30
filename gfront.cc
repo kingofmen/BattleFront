@@ -193,7 +193,7 @@ int main (int argc, char** argv) {
       }
 
       for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->advance(timeThisFrame); 
-
+      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->updateSupplies(); 
 
       for (unsigned int i = 0; i < factories.size(); ++i) {
 	factories[i].produce(timeThisFrame);
