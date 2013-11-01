@@ -5,6 +5,8 @@
 #include <vector> 
 
 struct Vertex {
+  friend class Tile; 
+
   Vertex (point p, double c);
 
   point position;
@@ -14,6 +16,9 @@ struct Vertex {
   void renormalise();
   double myControl    (bool player) const {return  player ? playerControl : 1-playerControl;} 
   double enemyControl (bool player) const {return !player ? playerControl : 1-playerControl;} 
+
+private:
+  double inFlux; 
 };
 
 struct Tile {
@@ -21,17 +26,17 @@ struct Tile {
   vector<Vertex*> corners;
 
   typedef vector<Vertex*>::iterator VertIter; 
+  typedef vector<Tile*>::iterator Iter;
+
   VertIter startv () {return corners.begin();}
   VertIter finalv () {return corners.end();} 
-
-  typedef vector<Tile*>::iterator Iter;
-  static Iter start () {return allTiles.begin();}
-  static Iter final () {return allTiles.end();} 
-
   Iter startn () {return neighbours.begin();}
   Iter finaln () {return neighbours.end();}
 
+  static Iter start () {return allTiles.begin();}
+  static Iter final () {return allTiles.end();} 
   static Tile* getClosest (point position, Tile* previous); 
+  static void spreadInfluence (int elapsedTime); 
 
 private:
   vector<Tile*> neighbours; 

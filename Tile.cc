@@ -73,10 +73,39 @@ void Vertex::influence (int elapsedTime, double armySize, const point& pos, bool
 
   if (!player) changeInControl *= -1;
   playerControl += changeInControl; 
-
 }
 
 void Vertex::renormalise () {
   if (playerControl > 1) playerControl = 1;
   else if (playerControl < 0) playerControl = 0;
+}
+
+void Tile::spreadInfluence (int elapsedTime) {
+  // Normalisation: Halfway towards equilibration every two seconds
+
+  for (Iter tile = start(); tile != final(); ++tile) {
+    for (VertIter v = (*tile)->startv(); v != (*tile)->finalv(); ++v) {
+      (*v)->inFlux = 0;
+    }
+  }
+
+  for (Iter tile = start(); tile != final(); ++tile) {
+    double avg = 0;
+    for (VertIter v = (*tile)->startv(); v != (*tile)->finalv(); ++v) {
+      avg += (*v)->playerControl; 
+    }
+    avg *= 0.25; 
+    for (VertIter v = (*tile)->startv(); v != (*tile)->finalv(); ++v) {
+      double diff = avg - (*v)->playerControl; 
+      diff *= (1 - pow(0.5, elapsedTime * 5.0e-7)); 
+      (*v)->inFlux += diff; 
+    }
+  }
+
+  for (Iter tile = start(); tile != final(); ++tile) {
+    for (VertIter v = (*tile)->startv(); v != (*tile)->finalv(); ++v) {
+      (*v)->playerControl += (*v)->inFlux; 
+    }
+  }
+
 }
