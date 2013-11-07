@@ -32,6 +32,7 @@ struct Tile {
   VertIter finalv () {return corners.end();} 
   Iter startn () {return neighbours.begin();}
   Iter finaln () {return neighbours.end();}
+  double avgControl (bool player); 
 
   static Iter start () {return allTiles.begin();}
   static Iter final () {return allTiles.end();} 

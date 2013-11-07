@@ -80,6 +80,13 @@ void Vertex::renormalise () {
   else if (playerControl < 0) playerControl = 0;
 }
 
+double Tile::avgControl (bool player) {
+  double ret = 0; 
+  for (VertIter v = startv(); v != finalv(); ++v) ret += (*v)->myControl(player);
+  ret *= 0.25;
+  return ret; 
+}
+
 void Tile::spreadInfluence (int elapsedTime) {
   // Normalisation: Halfway towards equilibration every two seconds
 

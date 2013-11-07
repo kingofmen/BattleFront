@@ -5,6 +5,7 @@
 
 using namespace std; 
 class Packet;
+class Tile; 
 
 struct Factory {
   bool player1; 
@@ -12,6 +13,7 @@ struct Factory {
   int timeSinceProduction;
   int packetSize; 
   point position; 
+  Tile* tile; 
 
   void produce (int elapsedTime);
 };

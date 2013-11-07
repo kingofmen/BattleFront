@@ -112,6 +112,7 @@ int main (int argc, char** argv) {
   fac1.timeSinceProduction = 0;
   fac1.packetSize = 50;
   fac1.position = point(300, 400); 
+  fac1.tile = Tile::getClosest(fac1.position, 0); 
   factories.push_back(fac1); 
 
   Factory fac2;
@@ -120,6 +121,7 @@ int main (int argc, char** argv) {
   fac2.timeSinceProduction = 0;
   fac2.packetSize = 50;
   fac2.position = point(800, 400); 
+  fac2.tile = Tile::getClosest(fac2.position, 0); 
   factories.push_back(fac2); 
 
   for (int i = 0; i < frontSize-1; ++i) {
@@ -193,10 +195,23 @@ int main (int argc, char** argv) {
 	for (int ypos = 0; ypos <= gridHeight; ++ypos) {
 	  grid[xpos][ypos]->renormalise();
 	}
-      }
+      }    
 
+      int p1f = 0;
+      int p2f = 0; 
       for (unsigned int i = 0; i < factories.size(); ++i) {
 	factories[i].produce(timeThisFrame);
+	if (factories[i].tile->avgControl(factories[i].player1) < 0.25) factories[i].player1 = !factories[i].player1; 
+	if (factories[i].player1) p1f++; else p2f++;
+      }
+
+      if (0 == p1f) {
+	std::cout << "Computer wins\n";
+	break;
+      }
+      if (0 == p2f) {
+	std::cout << "Player wins\n";
+	break;
       }
     }
 
