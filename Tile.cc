@@ -78,6 +78,8 @@ double Vertex::influence (int elapsedTime, double armySize, const point& pos, bo
 }
 
 void Vertex::renormalise () {
+  if (playerControl > 0.75) playerControl += 0.01;
+  else if (playerControl < 0.25) playerControl -= 0.01; 
   if (playerControl > 1) playerControl = 1;
   else if (playerControl < 0) playerControl = 0;
 }
