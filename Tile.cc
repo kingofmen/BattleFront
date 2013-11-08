@@ -60,7 +60,7 @@ Tile* Tile::getClosest (point position, Tile* previous) {
   return 0; 
 }
 
-void Vertex::influence (int elapsedTime, double armySize, const point& pos, bool player) {
+double Vertex::influence (int elapsedTime, double armySize, const point& pos, bool player) {
   // Normalisation: A unit of size 100, in the middle of a tile, unopposed,
   // should take over all four vertices in one second. 
 
@@ -70,9 +70,11 @@ void Vertex::influence (int elapsedTime, double armySize, const point& pos, bool
   
   double distance = pos.distance(position);
   double changeInControl = (elapsedTime*normalTime) * (normalDist/(1+distance)) * (armySize*normalSize); 
+  double ret = enemyControl(player); 
 
   if (!player) changeInControl *= -1;
   playerControl += changeInControl; 
+  return ret; 
 }
 
 void Vertex::renormalise () {

@@ -12,7 +12,7 @@ struct Vertex {
   point position;
   double playerControl; 
 
-  void influence (int elapsedTime, double armySize, const point& pos, bool player);
+  double influence (int elapsedTime, double armySize, const point& pos, bool player);
   void renormalise();
   double myControl    (bool player) const {return  player ? playerControl : 1-playerControl;} 
   double enemyControl (bool player) const {return !player ? playerControl : 1-playerControl;} 

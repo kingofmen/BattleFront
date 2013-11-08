@@ -9,7 +9,9 @@ vector<Army*> Army::allArmies;
 Army::Army () 
   : position(0, 0) 
   , tile(0) 
-  , usedSupplies(0)
+  , combat(0)
+  , conquer(0)
+  , debug(false) 
 {
   allArmies.push_back(this); 
 } 
@@ -19,13 +21,17 @@ Army::~Army () {
   allArmies.erase(me); 
 }
 
+double getCombatAmount (double theirSupply, double ourSupply, double radFrac) {
+  ourSupply *= radFrac; 
+  return (theirSupply / ourSupply);
+}
+
 void Army::fight (int elapsedTime) {
   tile = Tile::getClosest(position, tile);
   
   // Push enemy armies
-  double radius = min(0.2*supplies, 30.0); 
+  double radius = max(10.0, min(0.2*supplies, 30.0)); 
   double radiusSq = radius*radius;
-  double totalCombat = 0; 
   for (Iter army = start(); army != final(); ++army) {
     if ((*army)->player == player) continue; 
     point line = (*army)->position; // Points from us to them 
@@ -33,30 +39,38 @@ void Army::fight (int elapsedTime) {
     double distanceSq = line.lengthSq(); 
     if (distanceSq > radiusSq) continue;
     line.normalise(); 
-    double pushThem = supplies / (1 + (*army)->supplies);
-    totalCombat += (*army)->supplies / (0.001 + sqrt(distanceSq / radiusSq)); 
+    double pushThem = supplies / (*army)->supplies;
+    double currCombat = getCombatAmount((*army)->supplies, supplies, 0.001 + sqrt(distanceSq / radiusSq));
+    combat += currCombat;
+    (*army)->combat += currCombat; 
     (*army)->move(line*pushThem);; 
     pushThem = (-1.0) / pushThem; 
     move(line*pushThem); 
   }
+}
 
+void Army::updateSupplies (int elapsedTime) {
   // Normalisation: A unit fighting an equal-sized unit at a 
   // distance of half its combat radius runs down half its
   // supplies in five seconds. Not fighting, it runs down half
   // its supplies in a minute. 
-  totalCombat /= supplies;
-  usedSupplies += supplies*(1 - pow(0.5, elapsedTime*(totalCombat*2e-7 + 1.667e-8)));
-}
-
-void Army::updateSupplies () {
-  supplies -= usedSupplies;
-  usedSupplies = 0; 
+  supplies -= supplies*(1 - pow(0.5, elapsedTime*(combat*2e-7 + 1.667e-8)));
+  combat = 0; 
+  conquer = 0; 
   if (supplies < 1) supplies = 1; 
 }
 
 void Army::influence (int elapsedTime) {
+  // Combat normalisation: "Full" combat is
+  // fighting an enemy of equal supplies at a 
+  // distance of half our combat radius, making 0.5. 
+
+  double combatFraction = 1 - combat*2;// / getCombatAmount(1, 1, 0.5);
+  if (combatFraction < 0) return;
+  elapsedTime = (int) floor(elapsedTime * combatFraction + 0.5); 
+
   for (Tile::VertIter vert = tile->startv(); vert != tile->finalv(); ++vert) {
-    (*vert)->influence(elapsedTime, supplies, position, player); 
+    conquer += (*vert)->influence(elapsedTime, supplies, position, player); 
   }
 }
 
@@ -82,6 +96,16 @@ bool Army::testForEnemy (Vertex const* const vert, point& direction, double& tot
 }
 
 void Army::advance (int elapsedTime) {
+  double combatFraction = 1 - combat*2;// / getCombatAmount(1, 1, 0.5);
+  if (combatFraction < 0) return;
+  elapsedTime = (int) floor(elapsedTime * combatFraction + 0.5); 
+
+  // Influence normalisation: No movement if the tile is half controlled
+  // by the enemy. 
+  double conquerFraction = 1 - (conquer * 0.5); 
+  if (conquerFraction < 0) return;
+  elapsedTime = (int) floor(elapsedTime * conquerFraction + 0.5); 
+
   point direction;
   bool goodEnough = false; 
   double totalWeight = 0; 

@@ -129,11 +129,13 @@ int main (int argc, char** argv) {
     curr->supplies = 100;
     curr->player = true; 
     curr->position = point(windowWidth/2 - 15, 1 + windowHeight*(1.0 / (frontSize-1))*i); 
+    curr->debug = (10 == i);
 
     curr = new Army();
     curr->supplies = 100;
     curr->player = false; 
     curr->position = point(windowWidth/2 + 15, 1 + windowHeight*(1.0 / (frontSize-1))*i); 
+    curr->debug = (10 == i);
   }
 
   int error = SDL_Init(SDL_INIT_EVERYTHING);
@@ -188,7 +190,7 @@ int main (int argc, char** argv) {
       for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->fight(timeThisFrame); 
       for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->influence(timeThisFrame); 
       for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->advance(timeThisFrame); 
-      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->updateSupplies(); 
+      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->updateSupplies(timeThisFrame); 
       Tile::spreadInfluence(timeThisFrame);
 
       for (int xpos = 0; xpos <= gridWidth; ++xpos) {
