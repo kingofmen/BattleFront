@@ -6,19 +6,42 @@
 
 struct Vertex {
   friend class Tile; 
+  enum Direction {North = 0, East, South, West, NumDirections}; 
+  typedef vector<Vertex*>::iterator Iter;
 
-  Vertex (point p, double c);
+  Vertex (point p, bool c, double t);
 
   point position;
+  bool player;
+  double troops; 
   double playerControl; 
 
+  double enemyControl (bool p) const {return (p == player) ? 0 : 1;}
   double influence (int elapsedTime, double armySize, const point& pos, bool player);
+  double myControl    (bool p) const {return (p == player) ? 1 : 0;} 
   void renormalise();
-  double myControl    (bool player) const {return  player ? playerControl : 1-playerControl;} 
-  double enemyControl (bool player) const {return !player ? playerControl : 1-playerControl;} 
+  void setNeighbour (Direction card, Vertex* n); 
+  Iter startn () {return neighbours.begin();}
+  Iter finaln () {return neighbours.end();}
+
+  static void fight (int elapsedTime); 
+  static Vertex* getClosestFighting (const point& pos, bool player); 
+  static void move (int elapsedTime); 
+  static Iter start () {return allVertices.begin();}
+  static Iter final () {return allVertices.end();} 
+  
 
 private:
   double inFlux; 
+  double enemyTroops; 
+
+  Vertex* north;
+  Vertex* east;
+  Vertex* south;
+  Vertex* west; 
+  vector<Vertex*> neighbours; 
+
+  static vector<Vertex*> allVertices; 
 };
 
 struct Tile {

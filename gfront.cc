@@ -26,11 +26,13 @@ const int gridHeight = windowHeight / tileSize;
 
 
 void drawTiles () {
+  static const double invMaxTroops = 0.1; 
+
   glBegin(GL_QUADS);
   for (Tile::Iter tile = Tile::start(); tile != Tile::final(); ++tile) {
     for (int i = 0; i < 4; ++i) {
-      //cout << "Drawing " << (*tile) << " " << i << " " << (*tile)->corners[i] << endl; 
-      glColor3d((*tile)->corners[i]->playerControl, 0.0, 1.0 - (*tile)->corners[i]->playerControl); 
+      if ((*tile)->corners[i]->player) glColor3d(min(1.0, (*tile)->corners[i]->troops * invMaxTroops), 0.0, 0.0);
+      else glColor3d(0.0, 0.0, min(1.0, (*tile)->corners[i]->troops*invMaxTroops)); 
       glVertex2d((*tile)->corners[i]->position.x(), (*tile)->corners[i]->position.y()); 
     }
   }
@@ -118,7 +120,15 @@ int main (int argc, char** argv) {
   for (int i = 0; i <= gridWidth; ++i) grid[i] = new Vertex*[gridHeight+1];
   for (int xpos = 0; xpos <= gridWidth; ++xpos) {
     for (int ypos = 0; ypos <= gridHeight; ++ypos) {
-      grid[xpos][ypos] = new Vertex(point(xpos*tileSize, ypos*tileSize), (xpos < 54 ? 1.0 : (xpos == 54 ? 0.5 : 0))); 
+      grid[xpos][ypos] = new Vertex(point(xpos*tileSize, ypos*tileSize), xpos < 54, 1);
+      if (xpos > 0) {
+	grid[xpos-0][ypos]->setNeighbour(Vertex::West, grid[xpos-1][ypos]);
+	grid[xpos-1][ypos]->setNeighbour(Vertex::East, grid[xpos-0][ypos]);
+      }
+      if (ypos > 0) {
+	grid[xpos][ypos-0]->setNeighbour(Vertex::North, grid[xpos][ypos-1]);
+	grid[xpos][ypos-1]->setNeighbour(Vertex::South, grid[xpos][ypos-0]);
+      }
     }
   }
 
@@ -136,7 +146,7 @@ int main (int argc, char** argv) {
   fac1.player1 = true;
   fac1.timeToProduce = 1e6; 
   fac1.timeSinceProduction = 0;
-  fac1.packetSize = 50;
+  fac1.packetSize = 5;
   fac1.position = point(300, 400); 
   fac1.tile = Tile::getClosest(fac1.position, 0); 
   factories.push_back(fac1); 
@@ -145,24 +155,10 @@ int main (int argc, char** argv) {
   fac2.player1 = false; 
   fac2.timeToProduce = 1e6; 
   fac2.timeSinceProduction = 0;
-  fac2.packetSize = 50;
+  fac2.packetSize = 5;
   fac2.position = point(800, 400); 
   fac2.tile = Tile::getClosest(fac2.position, 0); 
   factories.push_back(fac2); 
-
-  for (int i = 0; i < frontSize-1; ++i) {
-    Army* curr = new Army();
-    curr->supplies = 100;
-    curr->player = true; 
-    curr->position = point(windowWidth/2 - 15, 1 + windowHeight*(1.0 / (frontSize-1))*i); 
-    curr->debug = (10 == i);
-
-    curr = new Army();
-    curr->supplies = 100;
-    curr->player = false; 
-    curr->position = point(windowWidth/2 + 15, 1 + windowHeight*(1.0 / (frontSize-1))*i); 
-    curr->debug = (10 == i);
-  }
 
   int error = SDL_Init(SDL_INIT_EVERYTHING);
   assert(-1 != error); 
@@ -196,7 +192,6 @@ int main (int argc, char** argv) {
     drawTiles();
     drawFactories(factories); 
     drawPackets(); 
-    drawArmies(); 
     //drawGrid(); 
     SDL_GL_SwapWindow(win); 
 
@@ -213,11 +208,10 @@ int main (int argc, char** argv) {
 	delete (*p);
       }
       
-      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->fight(timeThisFrame); 
-      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->influence(timeThisFrame); 
-      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->advance(timeThisFrame); 
-      for (Army::Iter army = Army::start(); army != Army::final(); ++army) (*army)->updateSupplies(timeThisFrame); 
-      Tile::spreadInfluence(timeThisFrame);
+      Vertex::fight(timeThisFrame); 
+      Vertex::move(timeThisFrame); 
+
+      //Tile::spreadInfluence(timeThisFrame);
 
       for (int xpos = 0; xpos <= gridWidth; ++xpos) {
 	for (int ypos = 0; ypos <= gridHeight; ++ypos) {

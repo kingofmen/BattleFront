@@ -4,8 +4,8 @@
 #include "utils.hh" 
 
 using namespace std; 
-class Army; 
 class Tile; 
+class Vertex; 
 
 struct Packet {
   friend void initialise (); 
@@ -15,8 +15,8 @@ struct Packet {
   bool player1;
   int size;
   point position; 
-  Army* target; 
   Tile* tile; 
+  Vertex* target; 
 
   bool update (int elapsedTime); 
 

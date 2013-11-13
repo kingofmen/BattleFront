@@ -1,12 +1,159 @@
 #include "Tile.hh"
 #include <cmath> 
+#include <cassert> 
 
 vector<Tile*> Tile::allTiles; 
+vector<Vertex*> Vertex::allVertices; 
 
-Vertex::Vertex (point p, double c) 
+Vertex::Vertex (point p, bool c, double t) 
   : position(p)
-  , playerControl(c)
-{}
+  , player(c)
+  , troops(t)
+  , inFlux(0) 
+  , north(0)
+  , east(0)
+  , south(0)
+  , west(0)
+{
+  neighbours.resize(4); 
+  allVertices.push_back(this); 
+}
+
+void Vertex::setNeighbour (Direction card, Vertex* n) {
+  switch (card) {
+  case North: north = n; break;
+  case East : east  = n; break;
+  case South: south = n; break;
+  case West : west  = n; break;
+  case NumDirections:
+  default:
+    assert(false); 
+  }
+  neighbours[card] = n; 
+}
+
+void Vertex::fight (int elapsedTime) {
+  for (Iter v = start(); v != final(); ++v) {
+    (*v)->enemyTroops = 0;
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->player == (*v)->player) continue;
+      (*v)->enemyTroops += (*n)->troops;
+    }
+  }
+
+  for (Iter v = start(); v != final(); ++v) {
+    // Casualties proportional to square of enemy troops. 
+    (*v)->troops -= 0.00000001 * pow((*v)->enemyTroops, 2) * elapsedTime;
+    if ((*v)->troops < 0) (*v)->troops = 0; 
+  }
+}
+
+void Vertex::move (int elapsedTime) {
+  // Count enemy troops
+  for (Iter v = start(); v != final(); ++v) {
+    (*v)->inFlux = 0;
+    (*v)->enemyTroops = 0;
+    if (1 >= (*v)->troops) continue; 
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->player == (*v)->player) continue;
+      (*v)->enemyTroops += (*n)->troops;
+    }
+  }
+
+  // Retreat everywhere that's outnumbered by 4 to 1 or more 
+  for (Iter v = start(); v != final(); ++v) {
+    if ((*v)->troops > 4 * (*v)->enemyTroops) continue; 
+
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->player != (*v)->player) continue;
+      if ((*n)->troops < 4 * (*n)->enemyTroops) continue;
+      (*n)->troops += (*v)->troops;
+      break; 
+    }
+    (*v)->troops = 0; 
+  }
+
+  // Count troops after retreat
+  for (Iter v = start(); v != final(); ++v) {
+    (*v)->inFlux = 0;
+    (*v)->enemyTroops = 0;
+    if (1 >= (*v)->troops) continue; 
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->player == (*v)->player) continue;
+      (*v)->enemyTroops += (*n)->troops;
+    }
+  }
+
+  // Take over empty enemy vertices where possible
+  for (Iter v = start(); v != final(); ++v) {
+    if ((*v)->troops < 4 * (*v)->enemyTroops) continue; 
+
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->player == (*v)->player) continue;
+      if ((*n)->troops > 0.001) continue;
+      (*n)->player = (*v)->player;
+      (*n)->troops = 0.5*(*v)->troops;
+      (*v)->troops *= 0.5;
+      break; 
+    }
+  }
+
+  // Again with counting enemy troops!
+  for (Iter v = start(); v != final(); ++v) {
+    (*v)->inFlux = 0;
+    (*v)->enemyTroops = 0;
+    if (1 >= (*v)->troops) continue; 
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->player == (*v)->player) continue;
+      (*v)->enemyTroops += (*n)->troops;
+    }
+  }
+
+  // Reinforce friendly vertices where possible
+  for (Iter v = start(); v != final(); ++v) {
+    if ((*v)->troops < 1) continue; 
+    if ((*v)->troops < 2 * (*v)->enemyTroops) continue; 
+	
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->player != (*v)->player) continue;
+      if ((*n)->troops > (*v)->troops) continue;
+      double diff = (*v)->troops - (*n)->troops;
+      diff *= 0.5;
+      (*n)->troops += diff;
+      (*v)->troops -= diff; 
+    }
+  }
+  
+}
+
+Vertex* Vertex::getClosestFighting (const point& pos, bool player) {
+  double distance = 1e20;
+  Vertex* ret = 0; 
+  for (Iter v = start(); v != final(); ++v) {
+    if ((*v)->player != player) continue;
+
+    bool fighting = false; 
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue;
+      if ((*n)->player == (*v)->player) continue;
+      fighting = true;
+      break;
+    }
+    if (!fighting) continue;
+    double currDist = (*v)->position.distance(pos);
+    if (currDist > distance) continue;
+    ret = (*v);
+    distance = currDist; 
+  }
+  return ret; 
+}
 
 Tile::Tile (Vertex* dl, Vertex* dr, Vertex* ur, Vertex* ul) {
   corners.resize(4); 
