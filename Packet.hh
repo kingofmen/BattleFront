@@ -8,6 +8,8 @@ class Army;
 class Tile; 
 
 struct Packet {
+  friend void initialise (); 
+
   Packet (); 
   ~Packet (); 
   bool player1;
@@ -22,9 +24,8 @@ struct Packet {
   static Iter start () {return allPackets.begin();}
   static Iter final () {return allPackets.end();} 
 
-  static double speed; // Pixels per microsecond
-
 private:
+  static double speed; // Pixels per microsecond
   static vector<Packet*> allPackets; 
 };
 

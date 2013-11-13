@@ -1,4 +1,6 @@
 *.o
 ncurses-5.9/
 SDL2-2.0.0/
+ParadoxParser-master/
+front
 

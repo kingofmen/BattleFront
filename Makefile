@@ -12,8 +12,8 @@ CXXFLAGS += -g -fno-inline
 endif
 
 
-INCLUDES += -I$(PWD) -I/usr/include/boost/ -I/usr/include/GL/ 
-LIBS += -L/usr/lib/ -lGL $(SDLLIBS)
+INCLUDES += -I$(PWD) -I/usr/include/boost/ -I/usr/include/GL/ -I$(PWD)/ParadoxParser-master/ 
+LIBS += -L/usr/lib/ -lGL $(SDLLIBS) -L$(PWD)/ParadoxParser-master/ -lParser 
 
 .SUFFIXES: 
 .PHONY:		clean 

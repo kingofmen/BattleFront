@@ -7,6 +7,8 @@
 using namespace std;
 
 struct Army {
+  friend void initialise ();
+
   Army ();
   ~Army (); 
 
@@ -36,7 +38,15 @@ private:
   bool testForEnemy (Vertex const* const vert, point& direction, double& totalWeight);
 
   static double speed; // In pixels per microsecond
-  static double maxAdvance; 
+  static double minRadius;
+  static double maxRadius;
+  static double supplyRadius;
+  static double combatDecay;
+  static double generalDecay;
+  static double minSupply; 
+  static double invFullCombat; 
+  static double enemyControlFraction; 
+
   static vector<Army*> allArmies; 
 };
 

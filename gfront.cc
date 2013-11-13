@@ -7,6 +7,8 @@
 #include <vector>
 #include <map> 
 
+#include "Parser.hh"
+
 #include "utils.hh" 
 #include "Tile.hh" 
 #include "Army.hh" 
@@ -85,7 +87,31 @@ void drawArmies () {
   glEnd(); 
 }
 
+void initialise () {
+  Object* config = processFile("config.txt"); 
+  Army::speed = config->safeGetFloat("armySpeed", Army::speed);
+  Army::minRadius = config->safeGetFloat("armyMinRadius", Army::minRadius);
+  Army::maxRadius = config->safeGetFloat("armyMaxRadius", Army::maxRadius);
+  Army::supplyRadius = config->safeGetFloat("armySupplyRadius", Army::supplyRadius); 
+  Army::combatDecay = config->safeGetFloat("armyCombatDecay", Army::combatDecay); 
+  Army::generalDecay = config->safeGetFloat("armyGeneralDecay", Army::generalDecay); 
+  Army::minSupply = config->safeGetFloat("armyMinSupply", Army::minSupply); 
+  Army::invFullCombat = 1.0 / config->safeGetFloat("armyFullCombat", 1.0 / Army::invFullCombat); 
+  Army::enemyControlFraction = config->safeGetFloat("armyEnemyControlFraction", Army::enemyControlFraction); 
+
+    //= config->safeGetFloat("", Army::); 
+
+
+
+
+  Packet::speed = config->safeGetFloat("packetSpeed", Packet::speed); 
+
+
+}
+
 int main (int argc, char** argv) {
+  initialise(); 
+
   vector<Factory> factories; 
 
   Vertex** grid[gridWidth+1];

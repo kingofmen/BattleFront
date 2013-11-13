@@ -3,7 +3,15 @@
 #include "Army.hh" 
 
 double Army::speed = 0.00005; 
-double Army::maxAdvance = 3; 
+double Army::minRadius = 10;
+double Army::maxRadius = 30;
+double Army::supplyRadius = 0.2; 
+double Army::combatDecay = 2e-7;
+double Army::generalDecay = 1.667e-8;
+double Army::minSupply = 1; 
+double Army::invFullCombat = 2; 
+double Army::enemyControlFraction = 0.5;
+
 vector<Army*> Army::allArmies; 
 
 Army::Army () 
@@ -30,7 +38,7 @@ void Army::fight (int elapsedTime) {
   tile = Tile::getClosest(position, tile);
   
   // Push enemy armies
-  double radius = max(10.0, min(0.2*supplies, 30.0)); 
+  double radius = max(minRadius, min(supplyRadius*supplies, maxRadius)); 
   double radiusSq = radius*radius;
   for (Iter army = start(); army != final(); ++army) {
     if ((*army)->player == player) continue; 
@@ -54,10 +62,10 @@ void Army::updateSupplies (int elapsedTime) {
   // distance of half its combat radius runs down half its
   // supplies in five seconds. Not fighting, it runs down half
   // its supplies in a minute. 
-  supplies -= supplies*(1 - pow(0.5, elapsedTime*(combat*2e-7 + 1.667e-8)));
+  supplies -= supplies*(1 - pow(0.5, elapsedTime*(combat*combatDecay + generalDecay)));
   combat = 0; 
   conquer = 0; 
-  if (supplies < 1) supplies = 1; 
+  if (supplies < minSupply) supplies = minSupply; 
 }
 
 void Army::influence (int elapsedTime) {
@@ -65,7 +73,7 @@ void Army::influence (int elapsedTime) {
   // fighting an enemy of equal supplies at a 
   // distance of half our combat radius, making 0.5. 
 
-  double combatFraction = 1 - combat*2;// / getCombatAmount(1, 1, 0.5);
+  double combatFraction = 1 - combat*invFullCombat;
   if (combatFraction < 0) return;
   elapsedTime = (int) floor(elapsedTime * combatFraction + 0.5); 
 
@@ -96,13 +104,13 @@ bool Army::testForEnemy (Vertex const* const vert, point& direction, double& tot
 }
 
 void Army::advance (int elapsedTime) {
-  double combatFraction = 1 - combat*2;// / getCombatAmount(1, 1, 0.5);
+  double combatFraction = 1 - combat*invFullCombat;
   if (combatFraction < 0) return;
   elapsedTime = (int) floor(elapsedTime * combatFraction + 0.5); 
 
   // Influence normalisation: No movement if the tile is half controlled
   // by the enemy. 
-  double conquerFraction = 1 - (conquer * 0.5); 
+  double conquerFraction = 1 - (conquer * enemyControlFraction); 
   if (conquerFraction < 0) return;
   elapsedTime = (int) floor(elapsedTime * conquerFraction + 0.5); 
 
