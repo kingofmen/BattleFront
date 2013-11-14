@@ -21,7 +21,7 @@ LIBS += -L/usr/lib/ -lGL $(SDLLIBS) -L$(PWD)/ParadoxParser-master/ -lParser
 %.o:	%.cc
 	$(CXX) $(INCLUDES) $(CXXFLAGS) -c $< -o $@ 
 
-front:	gfront.o utils.o Army.o Packet.o Factory.o Tile.o 
+front:	gfront.o utils.o Packet.o Factory.o Tile.o 
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 

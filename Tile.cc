@@ -4,12 +4,17 @@
 
 vector<Tile*> Tile::allTiles; 
 vector<Vertex*> Vertex::allVertices; 
+double Vertex::troopMoveRate = 0.001; 
+double Vertex::fightRate = 0.0000001; 
 
 Vertex::Vertex (point p, bool c, double t) 
   : position(p)
   , player(c)
   , troops(t)
-  , inFlux(0) 
+  , debug(false)
+  , moved(0) 
+  , enemyTroops(0)
+  , flip(false)
   , north(0)
   , east(0)
   , south(0)
@@ -43,94 +48,137 @@ void Vertex::fight (int elapsedTime) {
   }
 
   for (Iter v = start(); v != final(); ++v) {
-    // Casualties proportional to square of enemy troops. 
-    (*v)->troops -= 0.00000001 * pow((*v)->enemyTroops, 2) * elapsedTime;
+    // Casualties proportional to enemy troops. 
+    double casualties = fightRate * (*v)->enemyTroops* elapsedTime;
+    if (1e-20 > casualties) continue; 
+    if ((*v)->debug) std::cout << (*v)->position << " taking casualties " << casualties << std::endl;
+    (*v)->troops -= casualties;
     if ((*v)->troops < 0) (*v)->troops = 0; 
   }
 }
 
-void Vertex::move (int elapsedTime) {
-  // Count enemy troops
+void Vertex::countTroops () {
   for (Iter v = start(); v != final(); ++v) {
-    (*v)->inFlux = 0;
+    if (((*v)->debug) && ((*v)->moved > 0)) 
+      std::cout << (*v)->position << " moves troops " << (*v)->moved << " to " 
+		<< (*v)->troops + (*v)->moved << std::endl; 
+    (*v)->troops += (*v)->moved;
+    (*v)->moved = 0; 
+    if ((*v)->troops < 0.01) (*v)->troops = 0; 
+    if ((*v)->flip) (*v)->player = !(*v)->player; 
+    (*v)->flip = false;  
+  }
+
+  for (Iter v = start(); v != final(); ++v) {
     (*v)->enemyTroops = 0;
-    if (1 >= (*v)->troops) continue; 
     for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
       if (!(*n)) continue; 
       if ((*n)->player == (*v)->player) continue;
       (*v)->enemyTroops += (*n)->troops;
     }
   }
+}
 
+double Vertex::reinforceWeight () const {
+  return enemyTroops + (1.0 / (1.0 + troops)); 
+}
+
+void Vertex::move (int elapsedTime) {
+  countTroops(); 
+  double maxTroopsToMove = elapsedTime*troopMoveRate; // Rate of troops movement along one edge. 
+  
   // Retreat everywhere that's outnumbered by 4 to 1 or more 
   for (Iter v = start(); v != final(); ++v) {
-    if ((*v)->troops > 4 * (*v)->enemyTroops) continue; 
+    if (1e-20 > (*v)->enemyTroops) continue;
+    if (4 * (*v)->troops > (*v)->enemyTroops) continue; 
 
+    if ((*v)->debug) std::cout << (*v)->position << " retreating due to " << (*v)->troops << " " << (*v)->enemyTroops << "\n"; 
+
+    (*v)->flip = true; 
+    double totalRetreating = 0; 
+    int placesToRetreat = 0;
     for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
       if (!(*n)) continue; 
       if ((*n)->player != (*v)->player) continue;
       if ((*n)->troops < 4 * (*n)->enemyTroops) continue;
-      (*n)->troops += (*v)->troops;
-      break; 
+      totalRetreating += maxTroopsToMove; 
+      placesToRetreat++;
     }
-    (*v)->troops = 0; 
-  }
-
-  // Count troops after retreat
-  for (Iter v = start(); v != final(); ++v) {
-    (*v)->inFlux = 0;
-    (*v)->enemyTroops = 0;
-    if (1 >= (*v)->troops) continue; 
-    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
-      if (!(*n)) continue; 
-      if ((*n)->player == (*v)->player) continue;
-      (*v)->enemyTroops += (*n)->troops;
+    if (0 == placesToRetreat) {
+      (*v)->troops = 0; 
+      (*v)->moved = 0; 
+      continue;
     }
-  }
-
-  // Take over empty enemy vertices where possible
-  for (Iter v = start(); v != final(); ++v) {
-    if ((*v)->troops < 4 * (*v)->enemyTroops) continue; 
-
-    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
-      if (!(*n)) continue; 
-      if ((*n)->player == (*v)->player) continue;
-      if ((*n)->troops > 0.001) continue;
-      (*n)->player = (*v)->player;
-      (*n)->troops = 0.5*(*v)->troops;
-      (*v)->troops *= 0.5;
-      break; 
-    }
-  }
-
-  // Again with counting enemy troops!
-  for (Iter v = start(); v != final(); ++v) {
-    (*v)->inFlux = 0;
-    (*v)->enemyTroops = 0;
-    if (1 >= (*v)->troops) continue; 
-    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
-      if (!(*n)) continue; 
-      if ((*n)->player == (*v)->player) continue;
-      (*v)->enemyTroops += (*n)->troops;
-    }
-  }
-
-  // Reinforce friendly vertices where possible
-  for (Iter v = start(); v != final(); ++v) {
-    if ((*v)->troops < 1) continue; 
-    if ((*v)->troops < 2 * (*v)->enemyTroops) continue; 
-	
+    
+    if (totalRetreating > (*v)->troops) totalRetreating = (*v)->troops; 
+    totalRetreating /= placesToRetreat;
     for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
       if (!(*n)) continue; 
       if ((*n)->player != (*v)->player) continue;
-      if ((*n)->troops > (*v)->troops) continue;
-      double diff = (*v)->troops - (*n)->troops;
-      diff *= 0.5;
-      (*n)->troops += diff;
-      (*v)->troops -= diff; 
+      if ((*n)->troops < 4 * (*n)->enemyTroops) continue;
+      (*n)->moved += totalRetreating;
+      (*v)->moved -= totalRetreating;
     }
   }
+
+  countTroops(); 
   
+  // Reinforce friendly vertices where possible.
+  // Fighting vertices have priority. 
+  for (Iter v = start(); v != final(); ++v) {
+    if (0.01 < (*v)->enemyTroops) continue; 
+    if (1e-20 > (*v)->troops) continue; 
+    
+    double totalTroops = (*v)->troops; 
+    int placesToReinforce = 0;
+    bool nearFront = true; 
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->player != (*v)->player) continue;
+      if ((*n)->troops > 0.98 * (*v)->troops) continue;
+      if ((*n)->enemyTroops < 0.01) continue;
+
+      totalTroops += (*n)->troops; 
+      placesToReinforce++; 
+    }
+
+    if (0 == placesToReinforce) {
+      totalTroops = (*v)->troops; 
+      for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+	if (!(*n)) continue; 
+	if ((*n)->player != (*v)->player) continue;
+	if ((*n)->troops > 0.98 * (*v)->troops) continue;
+	
+	totalTroops += (*n)->troops; 
+	placesToReinforce++; 
+      }
+      nearFront = false; 
+    }
+
+    if (0 == placesToReinforce) continue; 
+    totalTroops /= (1 + placesToReinforce); 
+
+    if ((*v)->debug) std::cout << (*v)->position << " reinforcing with "
+			       << nearFront << " " << (*v)->troops << " " << (*v)->enemyTroops
+			       << " " << totalTroops << " " << placesToReinforce << "\n"; 
+    
+    for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->player != (*v)->player) continue;
+      if ((*n)->troops > 0.98 * (*v)->troops) continue;
+      if ((nearFront) && ((*n)->enemyTroops < 0.01)) continue;
+
+      double moving = totalTroops - (*n)->troops; 
+      if (moving > maxTroopsToMove) moving = maxTroopsToMove;
+      if (moving > (*v)->troops + (*v)->moved) moving = (*v)->troops + (*v)->moved; 
+      if ((*v)->debug) std::cout << (*v)->position << " sending " << moving << " to " << (*n)->position << std::endl; 
+      (*n)->moved += moving;
+      (*v)->moved -= moving; 
+    }
+
+  }
+  
+  countTroops(); 
 }
 
 Vertex* Vertex::getClosestFighting (const point& pos, bool player) {
@@ -207,30 +255,6 @@ Tile* Tile::getClosest (point position, Tile* previous) {
   return 0; 
 }
 
-double Vertex::influence (int elapsedTime, double armySize, const point& pos, bool player) {
-  // Normalisation: A unit of size 100, in the middle of a tile, unopposed,
-  // should take over all four vertices in one second. 
-
-  const double normalTime = 1e-6;
-  const double normalDist = 5*sqrt(2); 
-  const double normalSize = 0.01; 
-  
-  double distance = pos.distance(position);
-  double changeInControl = (elapsedTime*normalTime) * (normalDist/(1+distance)) * (armySize*normalSize); 
-  double ret = enemyControl(player); 
-
-  if (!player) changeInControl *= -1;
-  playerControl += changeInControl; 
-  return ret; 
-}
-
-void Vertex::renormalise () {
-  if (playerControl > 0.75) playerControl += 0.01;
-  else if (playerControl < 0.25) playerControl -= 0.01; 
-  if (playerControl > 1) playerControl = 1;
-  else if (playerControl < 0) playerControl = 0;
-}
-
 double Tile::avgControl (bool player) {
   double ret = 0; 
   for (VertIter v = startv(); v != finalv(); ++v) ret += (*v)->myControl(player);
@@ -238,32 +262,3 @@ double Tile::avgControl (bool player) {
   return ret; 
 }
 
-void Tile::spreadInfluence (int elapsedTime) {
-  // Normalisation: Halfway towards equilibration every two seconds
-
-  for (Iter tile = start(); tile != final(); ++tile) {
-    for (VertIter v = (*tile)->startv(); v != (*tile)->finalv(); ++v) {
-      (*v)->inFlux = 0;
-    }
-  }
-
-  for (Iter tile = start(); tile != final(); ++tile) {
-    double avg = 0;
-    for (VertIter v = (*tile)->startv(); v != (*tile)->finalv(); ++v) {
-      avg += (*v)->playerControl; 
-    }
-    avg *= 0.25; 
-    for (VertIter v = (*tile)->startv(); v != (*tile)->finalv(); ++v) {
-      double diff = avg - (*v)->playerControl; 
-      diff *= (1 - pow(0.5, elapsedTime * 5.0e-7)); 
-      (*v)->inFlux += diff; 
-    }
-  }
-
-  for (Iter tile = start(); tile != final(); ++tile) {
-    for (VertIter v = (*tile)->startv(); v != (*tile)->finalv(); ++v) {
-      (*v)->playerControl += (*v)->inFlux; 
-    }
-  }
-
-}

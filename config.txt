@@ -1,10 +1,5 @@
-armySpeed = 0.00005
-armyMinRadius = 10
-armyMaxRadius = 30
-armySupplyRadius = 0.2
-armyCombatDecay = 0.0000002
-armyGeneralDecay = 0.00000001667
-armyMinSupply = 1
-armyFullCombat = 0.5
-armyEnemyControlFraction = 0.5  # Fraction of local enemy control that immobilises an army. 
 packetSpeed = 0.0001
+fightRate = 0.000001
+troopMoveRate = 0.001
+
+

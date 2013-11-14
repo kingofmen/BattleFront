@@ -5,6 +5,7 @@
 #include <vector> 
 
 struct Vertex {
+  friend void initialise (); 
   friend class Tile; 
   enum Direction {North = 0, East, South, West, NumDirections}; 
   typedef vector<Vertex*>::iterator Iter;
@@ -14,7 +15,7 @@ struct Vertex {
   point position;
   bool player;
   double troops; 
-  double playerControl; 
+  bool debug; 
 
   double enemyControl (bool p) const {return (p == player) ? 0 : 1;}
   double influence (int elapsedTime, double armySize, const point& pos, bool player);
@@ -32,8 +33,9 @@ struct Vertex {
   
 
 private:
-  double inFlux; 
+  double moved; 
   double enemyTroops; 
+  bool flip;
 
   Vertex* north;
   Vertex* east;
@@ -41,7 +43,13 @@ private:
   Vertex* west; 
   vector<Vertex*> neighbours; 
 
+  double reinforceWeight () const;
+
+  static void countTroops (); 
+
   static vector<Vertex*> allVertices; 
+  static double troopMoveRate; // Units of troops per millisecond 
+  static double fightRate; 
 };
 
 struct Tile {
@@ -60,7 +68,6 @@ struct Tile {
   static Iter start () {return allTiles.begin();}
   static Iter final () {return allTiles.end();} 
   static Tile* getClosest (point position, Tile* previous); 
-  static void spreadInfluence (int elapsedTime); 
 
 private:
   vector<Tile*> neighbours; 

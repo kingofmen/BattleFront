@@ -11,7 +11,6 @@
 
 #include "utils.hh" 
 #include "Tile.hh" 
-#include "Army.hh" 
 #include "Packet.hh" 
 #include "Factory.hh" 
 
@@ -26,7 +25,7 @@ const int gridHeight = windowHeight / tileSize;
 
 
 void drawTiles () {
-  static const double invMaxTroops = 0.1; 
+  static const double invMaxTroops = 0.2; 
 
   glBegin(GL_QUADS);
   for (Tile::Iter tile = Tile::start(); tile != Tile::final(); ++tile) {
@@ -37,17 +36,6 @@ void drawTiles () {
     }
   }
   glEnd(); 
-}
-
-void drawGrid () {
-  glColor3d(1.0, 1.0, 1.0); 
-  for (Tile::Iter tile = Tile::start(); tile != Tile::final(); ++tile) {
-    glBegin(GL_LINE_LOOP);
-    for (int i = 0; i < 4; ++i) {
-      glVertex2d((*tile)->corners[i]->position.x(), (*tile)->corners[i]->position.y()); 
-    }
-    glEnd(); 
-  }
 }
 
 void drawFactories (vector<Factory>& factories) {
@@ -76,38 +64,11 @@ void drawPackets () {
   glEnd(); 
 }
 
-void drawArmies () {
-  glBegin(GL_QUADS);
-  for (Army::Iter army = Army::start(); army != Army::final(); ++army) {
-    if ((*army)->player) glColor3d(0.0, 0.0, 1.0); 
-    else glColor3d(1.0, 0.0, 0.0); 
-    glVertex2d((*army)->position.x() - 4, (*army)->position.y() + 4);
-    glVertex2d((*army)->position.x() + 4, (*army)->position.y() + 4);
-    glVertex2d((*army)->position.x() + 4, (*army)->position.y() - 4);
-    glVertex2d((*army)->position.x() - 4, (*army)->position.y() - 4);
-  }
-  glEnd(); 
-}
-
 void initialise () {
   Object* config = processFile("config.txt"); 
-  Army::speed = config->safeGetFloat("armySpeed", Army::speed);
-  Army::minRadius = config->safeGetFloat("armyMinRadius", Army::minRadius);
-  Army::maxRadius = config->safeGetFloat("armyMaxRadius", Army::maxRadius);
-  Army::supplyRadius = config->safeGetFloat("armySupplyRadius", Army::supplyRadius); 
-  Army::combatDecay = config->safeGetFloat("armyCombatDecay", Army::combatDecay); 
-  Army::generalDecay = config->safeGetFloat("armyGeneralDecay", Army::generalDecay); 
-  Army::minSupply = config->safeGetFloat("armyMinSupply", Army::minSupply); 
-  Army::invFullCombat = 1.0 / config->safeGetFloat("armyFullCombat", 1.0 / Army::invFullCombat); 
-  Army::enemyControlFraction = config->safeGetFloat("armyEnemyControlFraction", Army::enemyControlFraction); 
-
-    //= config->safeGetFloat("", Army::); 
-
-
-
-
   Packet::speed = config->safeGetFloat("packetSpeed", Packet::speed); 
-
+  Vertex::troopMoveRate = config->safeGetFloat("troopMoveRate", Vertex::troopMoveRate);
+  Vertex::fightRate = config->safeGetFloat("fightRate", Vertex::fightRate); 
 
 }
 
@@ -121,6 +82,9 @@ int main (int argc, char** argv) {
   for (int xpos = 0; xpos <= gridWidth; ++xpos) {
     for (int ypos = 0; ypos <= gridHeight; ++ypos) {
       grid[xpos][ypos] = new Vertex(point(xpos*tileSize, ypos*tileSize), xpos < 54, 1);
+      //if ((xpos == 52) && (ypos == 20)) grid[xpos][ypos]->debug = true; 
+      //if ((xpos == 51) && (ypos == 20)) grid[xpos][ypos]->debug = true; 
+      //if ((xpos == 53) && (ypos == 20)) grid[xpos][ypos]->debug = true; 
       if (xpos > 0) {
 	grid[xpos-0][ypos]->setNeighbour(Vertex::West, grid[xpos-1][ypos]);
 	grid[xpos-1][ypos]->setNeighbour(Vertex::East, grid[xpos-0][ypos]);
@@ -146,7 +110,7 @@ int main (int argc, char** argv) {
   fac1.player1 = true;
   fac1.timeToProduce = 1e6; 
   fac1.timeSinceProduction = 0;
-  fac1.packetSize = 5;
+  fac1.packetSize = 50;
   fac1.position = point(300, 400); 
   fac1.tile = Tile::getClosest(fac1.position, 0); 
   factories.push_back(fac1); 
@@ -155,7 +119,7 @@ int main (int argc, char** argv) {
   fac2.player1 = false; 
   fac2.timeToProduce = 1e6; 
   fac2.timeSinceProduction = 0;
-  fac2.packetSize = 5;
+  fac2.packetSize = 50;
   fac2.position = point(800, 400); 
   fac2.tile = Tile::getClosest(fac2.position, 0); 
   factories.push_back(fac2); 
@@ -192,7 +156,6 @@ int main (int argc, char** argv) {
     drawTiles();
     drawFactories(factories); 
     drawPackets(); 
-    //drawGrid(); 
     SDL_GL_SwapWindow(win); 
 
     if (!paused) {
@@ -210,14 +173,6 @@ int main (int argc, char** argv) {
       
       Vertex::fight(timeThisFrame); 
       Vertex::move(timeThisFrame); 
-
-      //Tile::spreadInfluence(timeThisFrame);
-
-      for (int xpos = 0; xpos <= gridWidth; ++xpos) {
-	for (int ypos = 0; ypos <= gridHeight; ++ypos) {
-	  grid[xpos][ypos]->renormalise();
-	}
-      }    
 
       int p1f = 0;
       int p2f = 0; 
