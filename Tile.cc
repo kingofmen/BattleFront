@@ -7,6 +7,7 @@ vector<Tile*> Tile::allTiles;
 vector<Vertex*> Vertex::allVertices; 
 double Vertex::troopMoveRate = 0.001; 
 double Vertex::fightRate = 0.0000001; 
+double Vertex::minimumGarrison = 1; 
 
 Vertex::Vertex (point p, bool c, double t) 
   : position(p)
@@ -146,7 +147,7 @@ void Vertex::move (int elapsedTime) {
   // Fighting vertices have priority. 
   for (Iter v = start(); v != final(); ++v) {
     if (0 == (*v)->frontDistance) continue; 
-    if (1e-20 > (*v)->troops) continue; 
+    if (minimumGarrison > (*v)->troops) continue; 
     
     double totalTroops = (*v)->troops; 
     int placesToReinforce = 0;

@@ -69,7 +69,7 @@ void initialise () {
   Packet::speed = config->safeGetFloat("packetSpeed", Packet::speed); 
   Vertex::troopMoveRate = config->safeGetFloat("troopMoveRate", Vertex::troopMoveRate);
   Vertex::fightRate = config->safeGetFloat("fightRate", Vertex::fightRate); 
-
+  Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
 }
 
 int main (int argc, char** argv) {

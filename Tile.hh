@@ -52,6 +52,7 @@ private:
   static vector<Vertex*> allVertices; 
   static double troopMoveRate; // Units of troops per millisecond 
   static double fightRate; 
+  static double minimumGarrison; 
 };
 
 struct Tile {
