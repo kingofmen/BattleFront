@@ -23,7 +23,8 @@ Packet::~Packet () {
 
 bool Packet::update (int elapsedTime) {
   tile = Tile::getClosest(position, tile);
-  if ((!target) || (target->player != player1)) target = Vertex::getClosestFighting(position, player1);
+  if ((!target) || (target->player != player1) || (target->getFrontDistance() > 4)) 
+    target = Vertex::getClosestFighting(position, player1);
   if (!target) return true; 
 
 

@@ -19,6 +19,7 @@ struct Vertex {
 
   double enemyControl (bool p) const {return (p == player) ? 0 : 1;}
   double influence (int elapsedTime, double armySize, const point& pos, bool player);
+  int getFrontDistance () const {return frontDistance;} 
   double myControl    (bool p) const {return (p == player) ? 1 : 0;} 
   void renormalise();
   void setNeighbour (Direction card, Vertex* n); 
