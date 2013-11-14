@@ -7,7 +7,13 @@ using namespace std;
 class Packet;
 class Tile; 
 
-struct Factory {
+struct WareHouse {
+  bool release; 
+  int capacity;
+  vector<Packet*> content; 
+};
+
+struct Factory : public WareHouse {
   bool player1; 
   int timeToProduce; // All times in microseconds
   int timeSinceProduction;

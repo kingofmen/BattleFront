@@ -38,15 +38,15 @@ void drawTiles () {
   glEnd(); 
 }
 
-void drawFactories (vector<Factory>& factories) {
+void drawFactories (vector<Factory*>& factories) {
   glBegin(GL_TRIANGLES);
   for (unsigned int i = 0; i < factories.size(); ++i) {
-    if (factories[i].player1) glColor3d(0.0, 0.0, 1.0);
+    if (factories[i]->player1) glColor3d(0.0, 0.0, 1.0);
     else glColor3d(1.0, 0.0, 0.0);
 
-    glVertex2d(factories[i].position.x() + 0.0, factories[i].position.y() + 5.8);
-    glVertex2d(factories[i].position.x() + 5.0, factories[i].position.y() - 4.2);
-    glVertex2d(factories[i].position.x() - 5.0, factories[i].position.y() - 4.2);
+    glVertex2d(factories[i]->position.x() + 0.0, factories[i]->position.y() + 5.8);
+    glVertex2d(factories[i]->position.x() + 5.0, factories[i]->position.y() - 4.2);
+    glVertex2d(factories[i]->position.x() - 5.0, factories[i]->position.y() - 4.2);
   }
   glEnd(); 
 }
@@ -75,7 +75,7 @@ void initialise () {
 int main (int argc, char** argv) {
   initialise(); 
 
-  vector<Factory> factories; 
+  vector<Factory*> factories; 
 
   Vertex** grid[gridWidth+1];
   for (int i = 0; i <= gridWidth; ++i) grid[i] = new Vertex*[gridHeight+1];
@@ -106,23 +106,18 @@ int main (int argc, char** argv) {
     }
   }
 
-  Factory fac1;
-  fac1.player1 = true;
-  fac1.timeToProduce = 1e6; 
-  fac1.timeSinceProduction = 0;
-  fac1.packetSize = 50;
-  fac1.position = point(300, 400); 
-  fac1.tile = Tile::getClosest(fac1.position, 0); 
-  factories.push_back(fac1); 
-
-  Factory fac2;
-  fac2.player1 = false; 
-  fac2.timeToProduce = 1e6; 
-  fac2.timeSinceProduction = 0;
-  fac2.packetSize = 50;
-  fac2.position = point(800, 400); 
-  fac2.tile = Tile::getClosest(fac2.position, 0); 
-  factories.push_back(fac2); 
+  Object* scenario = processFile("scenario.txt");
+  objvec facts = scenario->getValue("factory"); 
+  for (objiter fact = facts.begin(); fact != facts.end(); ++fact) {
+    Factory* fac = new Factory();
+    fac->player1 = ((*fact)->safeGetString("human", "no") == "yes");
+    fac->timeToProduce = (*fact)->safeGetInt("timeToProduce"); 
+    fac->timeSinceProduction = 0; 
+    fac->packetSize = (*fact)->safeGetInt("packetSize"); 
+    fac->position = point((*fact)->safeGetFloat("xpos"), (*fact)->safeGetFloat("ypos"));
+    fac->tile = Tile::getClosest(fac->position, 0);
+    factories.push_back(fac);
+  }
 
   int error = SDL_Init(SDL_INIT_EVERYTHING);
   assert(-1 != error); 
@@ -177,9 +172,9 @@ int main (int argc, char** argv) {
       int p1f = 0;
       int p2f = 0; 
       for (unsigned int i = 0; i < factories.size(); ++i) {
-	factories[i].produce(timeThisFrame);
-	if (factories[i].tile->avgControl(factories[i].player1) < 0.25) factories[i].player1 = !factories[i].player1; 
-	if (factories[i].player1) p1f++; else p2f++;
+	factories[i]->produce(timeThisFrame);
+	if (factories[i]->tile->avgControl(factories[i]->player1) < 0.25) factories[i]->player1 = !factories[i]->player1; 
+	if (factories[i]->player1) p1f++; else p2f++;
       }
 
       if (0 == p1f) {
