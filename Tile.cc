@@ -1,6 +1,7 @@
 #include "Tile.hh"
 #include <cmath> 
 #include <cassert> 
+#include <queue> 
 
 vector<Tile*> Tile::allTiles; 
 vector<Vertex*> Vertex::allVertices; 
@@ -15,6 +16,7 @@ Vertex::Vertex (point p, bool c, double t)
   , moved(0) 
   , enemyTroops(0)
   , flip(false)
+  , frontDistance(1000000000)
   , north(0)
   , east(0)
   , south(0)
@@ -69,6 +71,7 @@ void Vertex::countTroops () {
     (*v)->flip = false;  
   }
 
+  queue<Vertex*> frontSpread;
   for (Iter v = start(); v != final(); ++v) {
     (*v)->enemyTroops = 0;
     for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
@@ -76,6 +79,22 @@ void Vertex::countTroops () {
       if ((*n)->player == (*v)->player) continue;
       (*v)->enemyTroops += (*n)->troops;
     }
+    if (0.01 < (*v)->enemyTroops) {
+      (*v)->frontDistance = 0;
+      frontSpread.push(*v); 
+    }
+    else (*v)->frontDistance = 1000000000;
+  }
+
+  while (!frontSpread.empty()) {
+    Vertex* curr = frontSpread.front(); 
+    for (Iter n = curr->startn(); n != curr->finaln(); ++n) {
+      if (!(*n)) continue; 
+      if ((*n)->frontDistance < curr->frontDistance + 2) continue;
+      (*n)->frontDistance = curr->frontDistance + 1;
+      frontSpread.push(*n); 
+    }
+    frontSpread.pop(); 
   }
 }
 
@@ -126,47 +145,39 @@ void Vertex::move (int elapsedTime) {
   // Reinforce friendly vertices where possible.
   // Fighting vertices have priority. 
   for (Iter v = start(); v != final(); ++v) {
-    if (0.01 < (*v)->enemyTroops) continue; 
+    if (0 == (*v)->frontDistance) continue; 
     if (1e-20 > (*v)->troops) continue; 
     
     double totalTroops = (*v)->troops; 
     int placesToReinforce = 0;
-    bool nearFront = true; 
+    int lowestDistance = (*v)->frontDistance;
     for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
       if (!(*n)) continue; 
       if ((*n)->player != (*v)->player) continue;
-      if ((*n)->troops > 0.98 * (*v)->troops) continue;
-      if ((*n)->enemyTroops < 0.01) continue;
+      if ((*n)->troops > 0.9999 * (*v)->troops) continue;
+      if ((*n)->frontDistance > lowestDistance) continue;
+      if ((*n)->frontDistance < lowestDistance) {
+	placesToReinforce = 0;
+	lowestDistance = (*n)->frontDistance;
+	totalTroops = (*v)->troops;
+      }
 
       totalTroops += (*n)->troops; 
       placesToReinforce++; 
-    }
-
-    if (0 == placesToReinforce) {
-      totalTroops = (*v)->troops; 
-      for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
-	if (!(*n)) continue; 
-	if ((*n)->player != (*v)->player) continue;
-	if ((*n)->troops > 0.98 * (*v)->troops) continue;
-	
-	totalTroops += (*n)->troops; 
-	placesToReinforce++; 
-      }
-      nearFront = false; 
     }
 
     if (0 == placesToReinforce) continue; 
     totalTroops /= (1 + placesToReinforce); 
 
     if ((*v)->debug) std::cout << (*v)->position << " reinforcing with "
-			       << nearFront << " " << (*v)->troops << " " << (*v)->enemyTroops
+			       << (*v)->troops << " " << (*v)->enemyTroops
 			       << " " << totalTroops << " " << placesToReinforce << "\n"; 
     
     for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
       if (!(*n)) continue; 
       if ((*n)->player != (*v)->player) continue;
-      if ((*n)->troops > 0.98 * (*v)->troops) continue;
-      if ((nearFront) && ((*n)->enemyTroops < 0.01)) continue;
+      if ((*n)->troops > 0.999 * (*v)->troops) continue;
+      if ((*n)->frontDistance > lowestDistance) continue;
 
       double moving = totalTroops - (*n)->troops; 
       if (moving > maxTroopsToMove) moving = maxTroopsToMove;
@@ -175,7 +186,6 @@ void Vertex::move (int elapsedTime) {
       (*n)->moved += moving;
       (*v)->moved -= moving; 
     }
-
   }
   
   countTroops(); 

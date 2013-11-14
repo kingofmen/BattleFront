@@ -36,6 +36,7 @@ private:
   double moved; 
   double enemyTroops; 
   bool flip;
+  int frontDistance; 
 
   Vertex* north;
   Vertex* east;
