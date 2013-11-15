@@ -8,15 +8,22 @@ class Packet;
 class Tile; 
 class Object;
 
-struct WareHouse {
+struct Building {
+  Building ();
+  ~Building ();
+
+  bool player; 
+  point position; 
+  int toCompletion; 
+};
+
+struct WareHouse : public Building {
   WareHouse ();
   ~WareHouse ();
 
   bool release; 
   int capacity;
   int content; 
-  bool player; 
-  point position; 
 
   void receive (Packet* packet);
   void update ();
@@ -29,17 +36,14 @@ private:
   static vector<WareHouse*> allWareHouses;
 };
 
-struct Factory {
+struct Factory : public Building {
   friend void createFactory (Object*); 
-  
 
   Factory ();
   ~Factory (); 
-  bool player1; 
   int timeToProduce; // All times in microseconds
   int timeSinceProduction;
   int packetSize; 
-  point position; 
   Tile* tile; 
 
   void produce (int elapsedTime);

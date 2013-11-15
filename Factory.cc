@@ -4,12 +4,21 @@
 vector<Factory*> Factory::allFactories; 
 vector<WareHouse*> WareHouse::allWareHouses; 
 
-Factory::Factory () {
+Building::Building () 
+  : toCompletion(0)
+{}
+
+Building::~Building () {} 
+
+Factory::Factory () 
+  : Building()
+{
   allFactories.push_back(this); 
 }
 
 WareHouse::WareHouse () 
-  : release(true)
+  : Building()
+  , release(true)
   , capacity(1000)
   , content(0)
 {
@@ -17,6 +26,16 @@ WareHouse::WareHouse ()
 }
 
 void WareHouse::receive (Packet* packet) {
+  if (0 < toCompletion) {
+    if (toCompletion > packet->size) {
+      toCompletion -= packet->size;
+      delete packet;
+      return;
+    }
+    packet->size -= toCompletion;
+    toCompletion = 0; 
+  }
+
   if (release) return;
   if (capacity < content + packet->getSize()) return; 
   content += packet->getSize();
@@ -60,7 +79,7 @@ void Factory::produce (int elapsedTime) {
   Packet* product = new Packet();
   product->size = packetSize;
   product->position = position;
-  product->player1 = player1; 
+  product->player1 = player; 
   m_WareHouse.receive(product); 
 }
 

@@ -40,14 +40,32 @@ void drawTiles () {
 
 void drawFactories () {
   glBegin(GL_TRIANGLES);
+
+  for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
+    if ((*w)->release) {
+      if ((*w)->player) glColor3d(0.0, 0.0, 1.0);
+      else glColor3d(1.0, 0.0, 0.0);
+    }
+    else {
+      if ((*w)->player) glColor3d(0.0, 0.0, 0.5 + (0.5*(*w)->content / (*w)->capacity));
+      else glColor3d(1.0, 0.0, 0.0);
+    }
+    
+    glVertex2d((*w)->position.x() + 0.0, (*w)->position.y() + 5.8);
+    glVertex2d((*w)->position.x() + 5.0, (*w)->position.y() - 4.2);
+    glVertex2d((*w)->position.x() - 5.0, (*w)->position.y() - 4.2);
+  }
+
+  /*
   for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
-    if ((*f)->player1) glColor3d(0.0, 0.0, 1.0);
+    if ((*f)->player) glColor3d(0.0, 0.0, 1.0);
     else glColor3d(1.0, 0.0, 0.0);
 
     glVertex2d((*f)->position.x() + 0.0, (*f)->position.y() + 5.8);
     glVertex2d((*f)->position.x() + 5.0, (*f)->position.y() - 4.2);
     glVertex2d((*f)->position.x() - 5.0, (*f)->position.y() - 4.2);
   }
+  */
   glEnd(); 
 }
 
@@ -75,22 +93,23 @@ void initialise () {
 void handleMouseClick (const SDL_MouseButtonEvent& button) {
   point click(button.x, button.y); 
   for (Factory::Iter fac = Factory::start(); fac != Factory::final(); ++fac) {
-    if (!(*fac)->player1) continue; 
+    if (!(*fac)->player) continue; 
     if (100 < click.distanceSq((*fac)->position)) continue;
 
     (*fac)->toggle(); 
+    return; 
   }
 }
 
 void createFactory (Object* fact) {
   Factory* fac = new Factory();
-  fac->player1 = (fact->safeGetString("human", "no") == "yes");
+  fac->player = (fact->safeGetString("human", "no") == "yes");
   fac->timeToProduce = fact->safeGetInt("timeToProduce"); 
   fac->timeSinceProduction = 0; 
   fac->packetSize = fact->safeGetInt("packetSize"); 
   fac->position = point(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos"));
   fac->tile = Tile::getClosest(fac->position, 0);
-  fac->m_WareHouse.player = fac->player1;
+  fac->m_WareHouse.player = fac->player;
   fac->m_WareHouse.position = fac->position; 
 }
 
@@ -188,8 +207,8 @@ int main (int argc, char** argv) {
       int p2f = 0; 
       for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
 	(*f)->produce(timeThisFrame);
-	if ((*f)->tile->avgControl((*f)->player1) < 0.25) (*f)->player1 = !(*f)->player1; 
-	if ((*f)->player1) p1f++; else p2f++;
+	if ((*f)->tile->avgControl((*f)->player) < 0.25) (*f)->player = !(*f)->player; 
+	if ((*f)->player) p1f++; else p2f++;
       }
       for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
 	(*w)->update(); 
