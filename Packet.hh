@@ -18,6 +18,7 @@ struct Packet {
   Tile* tile; 
   Vertex* target; 
 
+  int getSize () const {return size;} 
   bool update (int elapsedTime); 
 
   typedef vector<Packet*>::iterator Iter;

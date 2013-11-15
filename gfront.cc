@@ -38,15 +38,15 @@ void drawTiles () {
   glEnd(); 
 }
 
-void drawFactories (vector<Factory*>& factories) {
+void drawFactories () {
   glBegin(GL_TRIANGLES);
-  for (unsigned int i = 0; i < factories.size(); ++i) {
-    if (factories[i]->player1) glColor3d(0.0, 0.0, 1.0);
+  for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
+    if ((*f)->player1) glColor3d(0.0, 0.0, 1.0);
     else glColor3d(1.0, 0.0, 0.0);
 
-    glVertex2d(factories[i]->position.x() + 0.0, factories[i]->position.y() + 5.8);
-    glVertex2d(factories[i]->position.x() + 5.0, factories[i]->position.y() - 4.2);
-    glVertex2d(factories[i]->position.x() - 5.0, factories[i]->position.y() - 4.2);
+    glVertex2d((*f)->position.x() + 0.0, (*f)->position.y() + 5.8);
+    glVertex2d((*f)->position.x() + 5.0, (*f)->position.y() - 4.2);
+    glVertex2d((*f)->position.x() - 5.0, (*f)->position.y() - 4.2);
   }
   glEnd(); 
 }
@@ -70,6 +70,28 @@ void initialise () {
   Vertex::troopMoveRate = config->safeGetFloat("troopMoveRate", Vertex::troopMoveRate);
   Vertex::fightRate = config->safeGetFloat("fightRate", Vertex::fightRate); 
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
+}
+
+void handleMouseClick (const SDL_MouseButtonEvent& button) {
+  point click(button.x, button.y); 
+  for (Factory::Iter fac = Factory::start(); fac != Factory::final(); ++fac) {
+    if (!(*fac)->player1) continue; 
+    if (100 < click.distanceSq((*fac)->position)) continue;
+
+    (*fac)->toggle(); 
+  }
+}
+
+void createFactory (Object* fact) {
+  Factory* fac = new Factory();
+  fac->player1 = (fact->safeGetString("human", "no") == "yes");
+  fac->timeToProduce = fact->safeGetInt("timeToProduce"); 
+  fac->timeSinceProduction = 0; 
+  fac->packetSize = fact->safeGetInt("packetSize"); 
+  fac->position = point(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos"));
+  fac->tile = Tile::getClosest(fac->position, 0);
+  fac->m_WareHouse.player = fac->player1;
+  fac->m_WareHouse.position = fac->position; 
 }
 
 int main (int argc, char** argv) {
@@ -109,14 +131,7 @@ int main (int argc, char** argv) {
   Object* scenario = processFile("scenario.txt");
   objvec facts = scenario->getValue("factory"); 
   for (objiter fact = facts.begin(); fact != facts.end(); ++fact) {
-    Factory* fac = new Factory();
-    fac->player1 = ((*fact)->safeGetString("human", "no") == "yes");
-    fac->timeToProduce = (*fact)->safeGetInt("timeToProduce"); 
-    fac->timeSinceProduction = 0; 
-    fac->packetSize = (*fact)->safeGetInt("packetSize"); 
-    fac->position = point((*fact)->safeGetFloat("xpos"), (*fact)->safeGetFloat("ypos"));
-    fac->tile = Tile::getClosest(fac->position, 0);
-    factories.push_back(fac);
+    createFactory(*fact); 
   }
 
   int error = SDL_Init(SDL_INIT_EVERYTHING);
@@ -149,7 +164,7 @@ int main (int argc, char** argv) {
     glClear(GL_COLOR_BUFFER_BIT); 
     glColor3d(1.0, 0.0, 0.0); 
     drawTiles();
-    drawFactories(factories); 
+    drawFactories(); 
     drawPackets(); 
     SDL_GL_SwapWindow(win); 
 
@@ -171,10 +186,13 @@ int main (int argc, char** argv) {
 
       int p1f = 0;
       int p2f = 0; 
-      for (unsigned int i = 0; i < factories.size(); ++i) {
-	factories[i]->produce(timeThisFrame);
-	if (factories[i]->tile->avgControl(factories[i]->player1) < 0.25) factories[i]->player1 = !factories[i]->player1; 
-	if (factories[i]->player1) p1f++; else p2f++;
+      for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
+	(*f)->produce(timeThisFrame);
+	if ((*f)->tile->avgControl((*f)->player1) < 0.25) (*f)->player1 = !(*f)->player1; 
+	if ((*f)->player1) p1f++; else p2f++;
+      }
+      for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
+	(*w)->update(); 
       }
 
       if (0 == p1f) {
@@ -194,7 +212,9 @@ int main (int argc, char** argv) {
 	if (SDLK_p == event.key.keysym.sym) paused = !paused;
 	else if (SDLK_q == event.key.keysym.sym) done = true; 
 	break;
-      case SDL_MOUSEBUTTONDOWN: done = true; break;
+      case SDL_MOUSEBUTTONDOWN: 
+	handleMouseClick(event.button); 
+	break;
       default: break; 
       }
     }

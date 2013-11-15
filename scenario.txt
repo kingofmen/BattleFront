@@ -10,6 +10,6 @@ factory = {
   human = no
   xpos = 800
   ypos = 400
-  timeToProduce = 1000000
-  packetSize = 50
+  timeToProduce = 500000
+  packetSize = 25
 }
