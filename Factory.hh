@@ -14,7 +14,20 @@ struct Building {
 
   bool player; 
   point position; 
+  int capacity;
   int toCompletion; 
+};
+
+struct Railroad : public Building {
+  Railroad (); 
+
+  bool canAccept (Packet* packet);
+  void receive (Packet* packet);
+
+  point oneEnd;
+  point twoEnd;
+  int currentLoad; 
+  
 };
 
 struct WareHouse : public Building {
@@ -22,7 +35,6 @@ struct WareHouse : public Building {
   ~WareHouse ();
 
   bool release; 
-  int capacity;
   int content; 
 
   void receive (Packet* packet);
@@ -33,6 +45,8 @@ struct WareHouse : public Building {
   static Iter final () {return allWareHouses.end();}
 
 private:
+  Railroad* activeRail; 
+  vector<Railroad*> outgoing; 
   static vector<WareHouse*> allWareHouses;
 };
 
@@ -43,7 +57,6 @@ struct Factory : public Building {
   ~Factory (); 
   int timeToProduce; // All times in microseconds
   int timeSinceProduction;
-  int packetSize; 
   Tile* tile; 
 
   void produce (int elapsedTime);

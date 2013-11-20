@@ -51,21 +51,21 @@ void drawFactories () {
       else glColor3d(1.0, 0.0, 0.0);
     }
     
-    glVertex2d((*w)->position.x() + 0.0, (*w)->position.y() + 5.8);
-    glVertex2d((*w)->position.x() + 5.0, (*w)->position.y() - 4.2);
-    glVertex2d((*w)->position.x() - 5.0, (*w)->position.y() - 4.2);
+    glVertex2d((*w)->position.x() + 0.0, (*w)->position.y() + 9.3 + 1.5);
+    glVertex2d((*w)->position.x() + 8.0, (*w)->position.y() - 6.7 + 1.5);
+    glVertex2d((*w)->position.x() - 8.0, (*w)->position.y() - 6.7 + 1.5);
   }
 
-  /*
+  
   for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
     if ((*f)->player) glColor3d(0.0, 0.0, 1.0);
     else glColor3d(1.0, 0.0, 0.0);
 
-    glVertex2d((*f)->position.x() + 0.0, (*f)->position.y() + 5.8);
-    glVertex2d((*f)->position.x() + 5.0, (*f)->position.y() - 4.2);
-    glVertex2d((*f)->position.x() - 5.0, (*f)->position.y() - 4.2);
+    glVertex2d((*f)->position.x() + 0.0, (*f)->position.y() - 9.3 - 1.5);
+    glVertex2d((*f)->position.x() - 8.0, (*f)->position.y() + 6.7 - 1.5);
+    glVertex2d((*f)->position.x() + 8.0, (*f)->position.y() + 6.7 - 1.5);
   }
-  */
+  
   glEnd(); 
 }
 
@@ -106,7 +106,7 @@ void createFactory (Object* fact) {
   fac->player = (fact->safeGetString("human", "no") == "yes");
   fac->timeToProduce = fact->safeGetInt("timeToProduce"); 
   fac->timeSinceProduction = 0; 
-  fac->packetSize = fact->safeGetInt("packetSize"); 
+  fac->capacity = fact->safeGetInt("packetSize"); 
   fac->position = point(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos"));
   fac->tile = Tile::getClosest(fac->position, 0);
   fac->m_WareHouse.player = fac->player;
