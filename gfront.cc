@@ -23,6 +23,7 @@ const int tileSize = 10;
 const int gridWidth = windowWidth / tileSize;
 const int gridHeight = windowHeight / tileSize;
 
+Factory* selectedFactory = 0;
 
 void drawTiles () {
   static const double invMaxTroops = 0.2; 
@@ -65,8 +66,18 @@ void drawFactories () {
     glVertex2d((*f)->position.x() - 8.0, (*f)->position.y() + 6.7 - 1.5);
     glVertex2d((*f)->position.x() + 8.0, (*f)->position.y() + 6.7 - 1.5);
   }
-  
   glEnd(); 
+
+  if (selectedFactory) {
+    glColor3d(1.0, 1.0, 1.0); 
+    glBegin(GL_LINE_STRIP);
+    glVertex2d(selectedFactory->position.x() - 11, selectedFactory->position.y() - 11);
+    glVertex2d(selectedFactory->position.x() + 13, selectedFactory->position.y() - 11);
+    glVertex2d(selectedFactory->position.x() + 13, selectedFactory->position.y() + 13);
+    glVertex2d(selectedFactory->position.x() - 11, selectedFactory->position.y() + 13);
+    glVertex2d(selectedFactory->position.x() - 11, selectedFactory->position.y() - 11);
+    glEnd();
+  }
 }
 
 void drawPackets () {
@@ -92,13 +103,28 @@ void initialise () {
 
 void handleMouseClick (const SDL_MouseButtonEvent& button) {
   point click(button.x, button.y); 
+  Factory* clickedFactory = 0; 
+
   for (Factory::Iter fac = Factory::start(); fac != Factory::final(); ++fac) {
     if (!(*fac)->player) continue; 
     if (100 < click.distanceSq((*fac)->position)) continue;
 
-    (*fac)->toggle(); 
+    clickedFactory = (*fac);
+    break; 
+  }
+
+  if (!selectedFactory) {
+    selectedFactory = clickedFactory;
     return; 
   }
+
+  if (clickedFactory == selectedFactory) {
+    selectedFactory->toggle(); 
+    selectedFactory = 0;
+    return; 
+  }
+
+  
 }
 
 void createFactory (Object* fact) {
