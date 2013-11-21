@@ -6,6 +6,7 @@
 
 struct Vertex : public Iterable<Vertex> {
   friend void initialise (); 
+  friend void drawTiles (); 
   friend class Tile; 
   enum Direction {North = 0, East, South, West, NumDirections}; 
   typedef vector<Vertex*>::iterator Iter;
@@ -41,12 +42,12 @@ private:
   Vertex* south;
   Vertex* west; 
   vector<Vertex*> neighbours; 
-
-  double reinforceWeight () const;
+  int cooldown; 
 
   static void countTroops (); 
 
-  static double troopMoveRate; // Units of troops per millisecond 
+  static double troopMoveRate;  // Units of troops per millisecond 
+  static double coolDownFactor; // Milliseconds per troop received
   static double fightRate; 
   static double minimumGarrison; 
 };

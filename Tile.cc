@@ -7,6 +7,7 @@ vector<Tile*> Tile::allTiles;
 double Vertex::troopMoveRate = 0.001; 
 double Vertex::fightRate = 0.0000001; 
 double Vertex::minimumGarrison = 1; 
+double Vertex::coolDownFactor = 10000;
 
 Vertex::Vertex (point p, bool c, double t) 
   : Iterable<Vertex>(this)
@@ -22,6 +23,7 @@ Vertex::Vertex (point p, bool c, double t)
   , east(0)
   , south(0)
   , west(0)
+  , cooldown(0)
 {
   neighbours.resize(4); 
 }
@@ -98,14 +100,15 @@ void Vertex::countTroops () {
   }
 }
 
-double Vertex::reinforceWeight () const {
-  return enemyTroops + (1.0 / (1.0 + troops)); 
-}
-
 void Vertex::move (int elapsedTime) {
   countTroops(); 
   double maxTroopsToMove = elapsedTime*troopMoveRate; // Rate of troops movement along one edge. 
   
+  for (Iter v = start(); v != final(); ++v) {
+    (*v)->cooldown -= elapsedTime;
+    if (0 > (*v)->cooldown) (*v)->cooldown = 0; 
+  }
+
   // Retreat everywhere that's outnumbered by 4 to 1 or more 
   for (Iter v = start(); v != final(); ++v) {
     if (1e-20 > (*v)->enemyTroops) continue;
@@ -120,6 +123,7 @@ void Vertex::move (int elapsedTime) {
       if (!(*n)) continue; 
       if ((*n)->player != (*v)->player) continue;
       if ((*n)->troops < 4 * (*n)->enemyTroops) continue;
+      if (0 < (*n)->cooldown) continue;
       totalRetreating += maxTroopsToMove; 
       placesToRetreat++;
     }
@@ -133,9 +137,11 @@ void Vertex::move (int elapsedTime) {
     totalRetreating /= placesToRetreat;
     for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
       if (!(*n)) continue; 
+      if (0 < (*n)->cooldown) continue;
       if ((*n)->player != (*v)->player) continue;
       if ((*n)->troops < 4 * (*n)->enemyTroops) continue;
       (*n)->moved += totalRetreating;
+      (*n)->cooldown += (int) floor(totalRetreating * coolDownFactor + 0.5); 
       (*v)->moved -= totalRetreating;
     }
   }
@@ -146,44 +152,40 @@ void Vertex::move (int elapsedTime) {
   // Fighting vertices have priority. 
   for (Iter v = start(); v != final(); ++v) {
     if (0 == (*v)->frontDistance) continue; 
-    if (minimumGarrison > (*v)->troops) continue; 
+    if (minimumGarrison >= (*v)->troops) continue; 
+    if (0 < (*v)->cooldown) continue; 
     
-    double totalTroops = (*v)->troops; 
     int placesToReinforce = 0;
     int lowestDistance = (*v)->frontDistance;
     for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
       if (!(*n)) continue; 
       if ((*n)->player != (*v)->player) continue;
-      if ((*n)->troops > 0.9999 * (*v)->troops) continue;
+      if (0 < (*n)->cooldown) continue;
+      //if ((*n)->troops > 0.9999 * (*v)->troops) continue;
       if ((*n)->frontDistance > lowestDistance) continue;
       if ((*n)->frontDistance < lowestDistance) {
 	placesToReinforce = 0;
 	lowestDistance = (*n)->frontDistance;
-	totalTroops = (*v)->troops;
       }
 
-      totalTroops += (*n)->troops; 
       placesToReinforce++; 
     }
 
     if (0 == placesToReinforce) continue; 
-    totalTroops /= (1 + placesToReinforce); 
+    double moving = ((*v)->troops - minimumGarrison) / placesToReinforce;
+    if (moving > maxTroopsToMove) moving = maxTroopsToMove;
 
-    if ((*v)->debug) std::cout << (*v)->position << " reinforcing with "
-			       << (*v)->troops << " " << (*v)->enemyTroops
-			       << " " << totalTroops << " " << placesToReinforce << "\n"; 
-    
     for (Iter n = (*v)->startn(); n != (*v)->finaln(); ++n) {
       if (!(*n)) continue; 
       if ((*n)->player != (*v)->player) continue;
-      if ((*n)->troops > 0.999 * (*v)->troops) continue;
+      if (0 < (*n)->cooldown) continue;
+      //if ((*n)->troops > 0.999 * (*v)->troops) continue;
       if ((*n)->frontDistance > lowestDistance) continue;
 
-      double moving = totalTroops - (*n)->troops; 
-      if (moving > maxTroopsToMove) moving = maxTroopsToMove;
       if (moving > (*v)->troops + (*v)->moved) moving = (*v)->troops + (*v)->moved; 
       if ((*v)->debug) std::cout << (*v)->position << " sending " << moving << " to " << (*n)->position << std::endl; 
       (*n)->moved += moving;
+      (*n)->cooldown += (int) floor(moving * coolDownFactor + 0.5); 
       (*v)->moved -= moving; 
     }
   }

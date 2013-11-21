@@ -24,6 +24,9 @@ const int gridWidth = windowWidth / tileSize;
 const int gridHeight = windowHeight / tileSize;
 
 WareHouse* selectedWareHouse = 0;
+bool show_cooldown = false; 
+bool done = false;
+bool paused = false; 
 
 void drawTiles () {
   static const double invMaxTroops = 0.2; 
@@ -37,6 +40,16 @@ void drawTiles () {
     }
   }
   glEnd(); 
+
+  if (show_cooldown) {
+    glBegin(GL_POINTS);
+    for (Vertex::Iter v = Vertex::start(); v != Vertex::final(); ++v) {
+      if (0 >= (*v)->cooldown) continue; 
+      glColor3d(0.002*(*v)->cooldown, 0.002*(*v)->cooldown, 0.002*(*v)->cooldown); 
+      glVertex2d((*v)->position.x(), (*v)->position.y());
+    }
+    glEnd(); 
+  }
 }
 
 void drawFactories () {
@@ -111,6 +124,17 @@ void initialise () {
   Vertex::troopMoveRate = config->safeGetFloat("troopMoveRate", Vertex::troopMoveRate);
   Vertex::fightRate = config->safeGetFloat("fightRate", Vertex::fightRate); 
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
+  Vertex::coolDownFactor = config->safeGetFloat("cooldown", Vertex::coolDownFactor); 
+}
+
+void handleKeyPress (SDL_KeyboardEvent& key) {
+  switch (key.keysym.sym) {
+  case SDLK_p: paused = !paused; break;
+  case SDLK_q: done = true;  break;
+  case SDLK_c: show_cooldown = !show_cooldown; break; 
+  case SDLK_ESCAPE: selectedWareHouse = 0; break;
+  default: break; 
+  }
 }
 
 void handleMouseClick (const SDL_MouseButtonEvent& event) {
@@ -226,10 +250,8 @@ int main (int argc, char** argv) {
   glLoadIdentity();
   glOrtho(0.0f, windowWidth, windowHeight, 0.0f, 0.0f, 1.0f);
 
-  bool done = false;
-  SDL_Event event;
 
-  bool paused = false; 
+  SDL_Event event;
   timeval prevTime;
   timeval currTime; 
   timeval passTime; 
@@ -274,15 +296,9 @@ int main (int argc, char** argv) {
 
     while (SDL_PollEvent(&event)){
       switch (event.type) {
-      case SDL_QUIT: done = true; break;
-      case SDL_KEYDOWN: 
-	if (SDLK_p == event.key.keysym.sym) paused = !paused;
-	else if (SDLK_q == event.key.keysym.sym) done = true; 
-	else if (SDLK_ESCAPE == event.key.keysym.sym) selectedWareHouse = 0; 
-	break;
-      case SDL_MOUSEBUTTONDOWN: 
-	handleMouseClick(event.button); 
-	break;
+      case SDL_QUIT:            done = true;                    break;
+      case SDL_KEYDOWN:         handleKeyPress(event.key);      break;
+      case SDL_MOUSEBUTTONDOWN: handleMouseClick(event.button); break;
       default: break; 
       }
     }

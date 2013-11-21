@@ -116,6 +116,7 @@ void WareHouse::update () {
     release = true;
     player = !player;
     activeRail = 0; 
+    toCompletion += 500; 
   }
 
   if (0 == content) return;
