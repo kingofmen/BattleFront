@@ -22,6 +22,7 @@ struct Building {
 
 protected:
   bool useToBuild (Packet* packet); 
+  void releaseTroops (int size, Tile* t = 0);
 };
 
 struct Railroad : public Building, public Iterable<Railroad> {
@@ -51,7 +52,6 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
 
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
   void receive (Packet* packet);
-  void releaseTroops (int size); 
   void toggle (); 
   void update ();
   

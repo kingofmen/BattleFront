@@ -64,6 +64,7 @@ struct Tile {
   Iter startn () {return neighbours.begin();}
   Iter finaln () {return neighbours.end();}
   double avgControl (bool player); 
+  int frontDistance () const; 
 
   static Iter start () {return allTiles.begin();}
   static Iter final () {return allTiles.end();} 

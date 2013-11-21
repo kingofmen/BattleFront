@@ -87,13 +87,15 @@ void WareHouse::receive (Packet* packet) {
   delete packet; 
 }
 
-void WareHouse::releaseTroops (int size) {
-  Vertex::Iter best = tile->startv();
-  for (Vertex::Iter v = tile->startv(); v != tile->finalv(); ++v) {
-    if ((*v)->getFrontDistance() >= (*best)->getFrontDistance()) continue;
-    best = v;
+void Building::releaseTroops (int size, Tile* t) {
+  if (!t) t = tile; 
+  Vertex* best = 0; 
+  for (Vertex::Iter v = t->startv(); v != t->finalv(); ++v) {
+    if ((*v)->player != player) continue; 
+    if ((best) && ((*v)->getFrontDistance() >= best->getFrontDistance())) continue;
+    best = (*v);
   }
-  (*best)->troops += size; 
+  if (best) best->troops += size; 
 }
 
 void WareHouse::toggle () {
@@ -138,7 +140,6 @@ void Factory::produce (int elapsedTime) {
 }
 
 bool Railroad::canAccept (Packet* packet) {
-  if (0 < toCompletion) return true;
   if (capacity >= packet->size + currentLoad) return true;
   return false; 
 }
@@ -147,16 +148,26 @@ void Railroad::receive (Packet* packet, WareHouse* source) {
   if (!useToBuild(packet)) return; 
   packet->target = (source == oneHouse ? twoHouse : oneHouse); 
   packets.push_back(packet); 
+  currentLoad += packet->size; 
 }
 
 void Railroad::update (int elapsedTime) {
   static double speed = 0.0001; 
   vector<Packet*> removes;
   for (unsigned int p = 0; p < packets.size(); ++p) {
+    packets[p]->tile = Tile::getClosest(packets[p]->position, packets[p]->tile);
+    if (1 >= packets[p]->tile->frontDistance()) {
+      releaseTroops(packets[p]->size, packets[p]->tile); 
+      delete packets[p];
+      packets[p] = 0;
+      continue; 
+    }
+
     point direction = (packets[p]->target->position - packets[p]->position);
     double distance = direction.length();
     if (distance < speed*elapsedTime) {
       packets[p]->target->receive(packets[p]);
+      currentLoad -= packets[p]->size; 
       packets[p] = 0; 
       continue;
     }

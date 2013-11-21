@@ -1,8 +1,9 @@
  * Capture of warehouses (check) 
- * No railroads running through enemy territory
+ * No railroads running through enemy territory (check)
  * AI response
- * Footslogging movement change
+ * Footslogging movement change (check) 
  * Limit new warehouses? 
  * Delete warehouses
  * Expand railroad capacity
  * Build railroads without new warehouse
+ * Show railroad construction as length of line, not brightness 

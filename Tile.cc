@@ -274,3 +274,9 @@ double Tile::avgControl (bool player) {
   return ret; 
 }
 
+int Tile::frontDistance () const {
+  // Returns distance of closest tile
+  int ret = corners[0]->frontDistance;
+  for (unsigned int i = 1; i < corners.size(); ++i) ret = min(ret, corners[i]->frontDistance);
+  return ret; 
+}
