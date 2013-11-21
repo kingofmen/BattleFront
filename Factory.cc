@@ -67,6 +67,11 @@ void WareHouse::receive (Packet* packet) {
   // 3. Store.
   // 4. Release. 
 
+  if (packet->player != player) {
+    delete packet; // For you, the war is over.
+    return; 
+  }
+
   if (!useToBuild(packet)) return; 
   if ((activeRail) && (activeRail->canAccept(packet))) {
     activeRail->receive(packet, this);
@@ -106,6 +111,13 @@ void WareHouse::toggle () {
 }
 
 void WareHouse::update () {
+  if (0.25 > tile->avgControl(player)) {
+    content = 0;
+    release = true;
+    player = !player;
+    activeRail = 0; 
+  }
+
   if (0 == content) return;
   if (!release) return;
   releaseTroops(content);
@@ -120,7 +132,7 @@ void Factory::produce (int elapsedTime) {
   Packet* product = new Packet();
   product->size = capacity;
   product->position = position;
-  product->player1 = player; 
+  product->player = player; 
   m_WareHouse.receive(product); 
 }
 

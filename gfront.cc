@@ -95,7 +95,7 @@ void drawRailroads () {
 void drawPackets () {
   glBegin(GL_TRIANGLES);
   for (Packet::Iter p = Packet::start(); p != Packet::final(); ++p) {
-    if ((*p)->player1) glColor3d(0.0, 0.0, 1.0);
+    if ((*p)->player) glColor3d(0.0, 0.0, 1.0);
     else glColor3d(1.0, 0.0, 0.0);
 
     glVertex2d((*p)->position.x() + 0.0, (*p)->position.y() - 2.9);

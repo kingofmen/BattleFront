@@ -13,7 +13,7 @@ struct Packet {
 
   Packet (); 
   ~Packet (); 
-  bool player1;
+  bool player;
   int size;
   point position; 
   Tile* tile; 
