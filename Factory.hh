@@ -16,6 +16,8 @@ struct Building {
   point position; 
   int capacity;
   int toCompletion; 
+
+  double getCompFraction () {return 1.0 - 0.001*toCompletion;} 
 };
 
 struct Railroad : public Building, public Iterable<Railroad> {
@@ -54,18 +56,14 @@ struct Factory : public Building, public Iterable<Factory> {
   int timeToProduce; // All times in microseconds
   int timeSinceProduction;
   Tile* tile; 
+  WareHouse m_WareHouse; 
 
   void produce (int elapsedTime);
   void toggle () {m_WareHouse.release = !m_WareHouse.release;} 
+  
 
-  //typedef vector<Factory*>::iterator Iter;
-  //static Iter start () {return allFactories.begin();}
-  //static Iter final () {return allFactories.end();}
 
 private:
-  WareHouse m_WareHouse; 
-
-  //static vector<Factory*> allFactories;
 };
 
 

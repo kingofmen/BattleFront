@@ -43,14 +43,8 @@ void drawFactories () {
   glBegin(GL_TRIANGLES);
 
   for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
-    if ((*w)->release) {
-      if ((*w)->player) glColor3d(0.0, 0.0, 1.0);
-      else glColor3d(1.0, 0.0, 0.0);
-    }
-    else {
-      if ((*w)->player) glColor3d(0.0, 0.0, 0.5 + (0.5*(*w)->content / (*w)->capacity));
-      else glColor3d(1.0, 0.0, 0.0);
-    }
+    if ((*w)->player) glColor3d(0.0, 0.0, 0.2 + 0.8*(*w)->getCompFraction());
+    else glColor3d(0.2 + 0.8*(*w)->getCompFraction(), 0.0, 0.0);
     
     glVertex2d((*w)->position.x() + 0.0, (*w)->position.y() + 9.3 + 1.5);
     glVertex2d((*w)->position.x() + 8.0, (*w)->position.y() - 6.7 + 1.5);
@@ -78,6 +72,16 @@ void drawFactories () {
     glVertex2d(selectedFactory->position.x() - 11, selectedFactory->position.y() - 11);
     glEnd();
   }
+}
+
+void drawRailroads () {
+  glBegin(GL_LINES);
+  for (Railroad::Iter r = Railroad::start(); r != Railroad::final(); ++r) {
+    glColor3d(0.2 + 0.8*(*r)->getCompFraction(), 0.2 + 0.8*(*r)->getCompFraction(), 0.2 + 0.8*(*r)->getCompFraction()); 
+    glVertex2d((*r)->oneEnd.x(), (*r)->oneEnd.y());
+    glVertex2d((*r)->twoEnd.x(), (*r)->twoEnd.y());
+  }
+  glEnd(); 
 }
 
 void drawPackets () {
@@ -135,6 +139,14 @@ void handleMouseClick (const SDL_MouseButtonEvent& button) {
     house->player = true;
     house->position = click;
     house->capacity = 1000; 
+
+    Railroad* rail = new Railroad(house, &(selectedFactory->m_WareHouse)); 
+    rail->toCompletion = 1000; 
+    rail->capacity = 1000; 
+    rail->player = true;
+
+    selectedFactory = 0;
+    return; 
   }
   
 }
@@ -222,6 +234,7 @@ int main (int argc, char** argv) {
     glColor3d(1.0, 0.0, 0.0); 
     drawTiles();
     drawFactories(); 
+    drawRailroads();
     drawPackets(); 
     SDL_GL_SwapWindow(win); 
 

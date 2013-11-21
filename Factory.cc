@@ -13,7 +13,13 @@ Railroad::Railroad (WareHouse* w1, WareHouse* w2)
   , oneHouse(w1)
   , twoHouse(w2)
   , currentLoad(0)
-{}
+{
+  point line = twoEnd - oneEnd;
+  line.normalise(); 
+  line *= 15;
+  oneEnd = w1->position + line;
+  twoEnd = w2->position - line;
+}
 
 Factory::Factory () 
   : Building()
