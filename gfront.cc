@@ -113,18 +113,23 @@ void handleMouseClick (const SDL_MouseButtonEvent& button) {
     break; 
   }
 
-  if (!selectedFactory) {
+  if ((clickedFactory) && (!selectedFactory)) {
     selectedFactory = clickedFactory;
     return; 
   }
 
-  if (clickedFactory == selectedFactory) {
+  if ((clickedFactory) && (clickedFactory == selectedFactory)) {
     selectedFactory->toggle(); 
     selectedFactory = 0;
     return; 
   }
 
   if (!clickedFactory) {
+    if (!selectedFactory) return; 
+    Tile* closest = Tile::getClosest(click, 0); 
+    if (!closest) return;
+    if (0.75 > closest->avgControl(true)) return; 
+
     WareHouse* house = new WareHouse();
     house->toCompletion = 1000;
     house->player = true;
