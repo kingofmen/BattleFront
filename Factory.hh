@@ -18,6 +18,9 @@ struct Building {
   int toCompletion; 
 
   double getCompFraction () {return 1.0 - 0.001*toCompletion;} 
+
+protected:
+  void useToBuild (Packet* packet); 
 };
 
 struct Railroad : public Building, public Iterable<Railroad> {

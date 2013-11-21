@@ -36,13 +36,7 @@ WareHouse::WareHouse ()
   capacity = 1000; 
 }
 
-void WareHouse::receive (Packet* packet) {
-  // Four options:
-  // 1. Use towards completing this building.
-  // 2. Send on outgoing railroad with capacity.
-  // 3. Store.
-  // 4. Release. 
-
+void Building::useToBuild (Packet* packet) {
   if (0 < toCompletion) {
     if (toCompletion > packet->size) {
       toCompletion -= packet->size;
@@ -52,7 +46,16 @@ void WareHouse::receive (Packet* packet) {
     packet->size -= toCompletion;
     toCompletion = 0; 
   }
+}
 
+void WareHouse::receive (Packet* packet) {
+  // Four options:
+  // 1. Use towards completing this building.
+  // 2. Send on outgoing railroad with capacity.
+  // 3. Store.
+  // 4. Release. 
+
+  useToBuild(packet); 
   if ((activeRail) && (activeRail->canAccept(packet))) {
     activeRail->receive(packet);
     return; 
@@ -87,11 +90,12 @@ void Factory::produce (int elapsedTime) {
 }
 
 bool Railroad::canAccept (Packet* packet) {
-  if (toCompletion > 0) return true;
+  if (0 < toCompletion) return true;
   if (capacity >= packet->size + currentLoad) return true;
   return false; 
 }
 
 void Railroad::receive (Packet* packet) {
-
+  useToBuild(packet); 
+  
 }
