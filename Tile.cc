@@ -4,13 +4,13 @@
 #include <queue> 
 
 vector<Tile*> Tile::allTiles; 
-vector<Vertex*> Vertex::allVertices; 
 double Vertex::troopMoveRate = 0.001; 
 double Vertex::fightRate = 0.0000001; 
 double Vertex::minimumGarrison = 1; 
 
 Vertex::Vertex (point p, bool c, double t) 
-  : position(p)
+  : Iterable<Vertex>(this)
+  , position(p)
   , player(c)
   , troops(t)
   , debug(false)
@@ -24,7 +24,6 @@ Vertex::Vertex (point p, bool c, double t)
   , west(0)
 {
   neighbours.resize(4); 
-  allVertices.push_back(this); 
 }
 
 void Vertex::setNeighbour (Direction card, Vertex* n) {

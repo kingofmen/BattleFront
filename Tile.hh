@@ -4,7 +4,7 @@
 #include "utils.hh" 
 #include <vector> 
 
-struct Vertex {
+struct Vertex : public Iterable<Vertex> {
   friend void initialise (); 
   friend class Tile; 
   enum Direction {North = 0, East, South, West, NumDirections}; 
@@ -28,10 +28,7 @@ struct Vertex {
 
   static void fight (int elapsedTime); 
   static Vertex* getClosestFighting (const point& pos, bool player); 
-  static void move (int elapsedTime); 
-  static Iter start () {return allVertices.begin();}
-  static Iter final () {return allVertices.end();} 
-  
+  static void move (int elapsedTime);  
 
 private:
   double moved; 
@@ -49,7 +46,6 @@ private:
 
   static void countTroops (); 
 
-  static vector<Vertex*> allVertices; 
   static double troopMoveRate; // Units of troops per millisecond 
   static double fightRate; 
   static double minimumGarrison; 
@@ -59,7 +55,7 @@ struct Tile {
   Tile (Vertex* dl, Vertex* dr, Vertex* ur, Vertex* ul); 
   vector<Vertex*> corners;
 
-  typedef vector<Vertex*>::iterator VertIter; 
+  typedef Vertex::Iter VertIter; 
   typedef vector<Tile*>::iterator Iter;
 
   VertIter startv () {return corners.begin();}

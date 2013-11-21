@@ -140,10 +140,9 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
     if (!closest) return;
     if (0.75 > closest->avgControl(true)) return; 
 
-    WareHouse* house = new WareHouse();
+    WareHouse* house = new WareHouse(click);
     house->toCompletion = 1000;
     house->player = true;
-    house->position = click;
     house->capacity = 1000; 
 
     Railroad* rail = new Railroad(house, &(selectedFactory->m_WareHouse)); 
@@ -157,15 +156,12 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 }
 
 void createFactory (Object* fact) {
-  Factory* fac = new Factory();
+  Factory* fac = new Factory(point(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos")));
   fac->player = (fact->safeGetString("human", "no") == "yes");
   fac->timeToProduce = fact->safeGetInt("timeToProduce"); 
   fac->timeSinceProduction = 0; 
   fac->capacity = fact->safeGetInt("packetSize"); 
-  fac->position = point(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos"));
-  fac->tile = Tile::getClosest(fac->position, 0);
   fac->m_WareHouse.player = fac->player;
-  fac->m_WareHouse.position = fac->position; 
 }
 
 int main (int argc, char** argv) {
@@ -244,18 +240,6 @@ int main (int argc, char** argv) {
     SDL_GL_SwapWindow(win); 
 
     if (!paused) {
-      // Why do it this way? Because I get errors I don't understand
-      // when I just use 'erase' within the loop. Don't mess with the
-      // iterators. 
-      vector<Packet*> toErase;
-      for (Packet::Iter pack = Packet::start(); pack != Packet::final(); ++pack) {
-	if (!(*pack)->update(timeThisFrame)) continue;
-	toErase.push_back(*pack); 
-      }
-      for (vector<Packet*>::iterator p = toErase.begin(); p != toErase.end(); ++p) {
-	delete (*p);
-      }
-      
       Vertex::fight(timeThisFrame); 
       Vertex::move(timeThisFrame); 
 

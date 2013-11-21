@@ -1,13 +1,17 @@
 #include "Factory.hh"
 #include "Packet.hh" 
+#include "Tile.hh" 
 #include <cmath> 
 
-Building::Building () 
-  : toCompletion(0)
-{}
+Building::Building (point p) 
+  : position(p)
+  , toCompletion(0)
+{
+  tile = Tile::getClosest(position, 0); 
+}
 
 Railroad::Railroad (WareHouse* w1, WareHouse* w2) 
-  : Building()
+  : Building(w1->position)
   , Iterable<Railroad>(this)
   , oneEnd(w1->position)
   , twoEnd(w2->position)
@@ -26,13 +30,14 @@ Railroad::Railroad (WareHouse* w1, WareHouse* w2)
   w2->addRailroad(this);
 }
 
-Factory::Factory () 
-  : Building()
+Factory::Factory (point p) 
+  : Building(p)
   , Iterable<Factory>(this)
+  , m_WareHouse(p)
 {}
 
-WareHouse::WareHouse () 
-  : Building()
+WareHouse::WareHouse (point p) 
+  : Building(p)
   , Iterable<WareHouse>(this)
   , release(true)
   , content(0)
@@ -62,16 +67,28 @@ void WareHouse::receive (Packet* packet) {
   // 3. Store.
   // 4. Release. 
 
-  if (useToBuild(packet)) return; 
+  if (!useToBuild(packet)) return; 
   if ((activeRail) && (activeRail->canAccept(packet))) {
     activeRail->receive(packet);
     return; 
   }
 
-  if (release) return;
-  if (capacity < content + packet->getSize()) return; 
-  content += packet->getSize();
+  if ((release) || (capacity < content + packet->getSize())) {
+    releaseTroops(packet->getSize());
+  }
+  else {
+    content += packet->getSize();
+  }
   delete packet; 
+}
+
+void WareHouse::releaseTroops (int size) {
+  Vertex::Iter best = tile->startv();
+  for (Vertex::Iter v = tile->startv(); v != tile->finalv(); ++v) {
+    if ((*v)->getFrontDistance() >= (*best)->getFrontDistance()) continue;
+    best = v;
+  }
+  (*best)->troops += size; 
 }
 
 void WareHouse::toggle () {
@@ -91,11 +108,8 @@ void WareHouse::toggle () {
 void WareHouse::update () {
   if (0 == content) return;
   if (!release) return;
-  Packet* newPacket = new Packet(); 
-  newPacket->player1 = player;
-  newPacket->size = content;
+  releaseTroops(content);
   content = 0;
-  newPacket->position = position; 
 }
 
 void Factory::produce (int elapsedTime) {

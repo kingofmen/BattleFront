@@ -22,21 +22,5 @@ Packet::~Packet () {
 }
 
 bool Packet::update (int elapsedTime) {
-  tile = Tile::getClosest(position, tile);
-  if ((!target) || (target->player != player1) || (target->getFrontDistance() > 4)) 
-    target = Vertex::getClosestFighting(position, player1);
-  if (!target) return true; 
-
-
-  point direction = (target->position - position);
-  double distance = direction.length();
-  if (distance < speed*elapsedTime) {
-    target->troops += size; 
-    return true; 
-  }
-  direction.normalise(); 
-  direction *= (speed*elapsedTime);
-  position += direction;
-
   return false; 
 }

@@ -10,12 +10,13 @@ class Object;
 struct WareHouse;
 
 struct Building {
-  Building ();
+  Building (point p);
 
   bool player; 
   point position; 
   int capacity;
   int toCompletion; 
+  Tile* tile; 
 
   double getCompFraction () {return 1.0 - 0.001*toCompletion;} 
 
@@ -39,13 +40,14 @@ struct Railroad : public Building, public Iterable<Railroad> {
 };
 
 struct WareHouse : public Building, public Iterable<WareHouse> {
-  WareHouse ();
+  WareHouse (point p);
 
   bool release; 
   int content; 
 
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
   void receive (Packet* packet);
+  void releaseTroops (int size); 
   void toggle (); 
   void update ();
   
@@ -58,10 +60,9 @@ private:
 struct Factory : public Building, public Iterable<Factory> {
   friend void createFactory (Object*); 
 
-  Factory ();
+  Factory (point p);
   int timeToProduce; // All times in microseconds
   int timeSinceProduction;
-  Tile* tile; 
   WareHouse m_WareHouse; 
 
   void produce (int elapsedTime);
