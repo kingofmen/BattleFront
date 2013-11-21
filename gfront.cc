@@ -80,6 +80,14 @@ void drawRailroads () {
     glColor3d(0.2 + 0.8*(*r)->getCompFraction(), 0.2 + 0.8*(*r)->getCompFraction(), 0.2 + 0.8*(*r)->getCompFraction()); 
     glVertex2d((*r)->oneEnd.x(), (*r)->oneEnd.y());
     glVertex2d((*r)->twoEnd.x(), (*r)->twoEnd.y());
+    if ((*r)->oneHouse->activeRail == (*r)) {
+      glVertex2d((*r)->oneEnd.x(), (*r)->oneEnd.y());
+      glVertex2d((*r)->oneHouse->position.x(), (*r)->oneHouse->position.y());
+    }
+    if ((*r)->twoHouse->activeRail == (*r)) {
+      glVertex2d((*r)->twoEnd.x(), (*r)->twoEnd.y());
+      glVertex2d((*r)->twoHouse->position.x(), (*r)->twoHouse->position.y());
+    }
   }
   glEnd(); 
 }

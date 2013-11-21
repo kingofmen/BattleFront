@@ -42,6 +42,8 @@ private:
 };
 
 struct WareHouse : public Building, public Iterable<WareHouse> {
+  friend void drawRailroads(); 
+
   WareHouse (point p);
 
   bool release; 
