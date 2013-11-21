@@ -124,6 +124,13 @@ void handleMouseClick (const SDL_MouseButtonEvent& button) {
     return; 
   }
 
+  if (!clickedFactory) {
+    WareHouse* house = new WareHouse();
+    house->toCompletion = 1000;
+    house->player = true;
+    house->position = click;
+    house->capacity = 1000; 
+  }
   
 }
 
