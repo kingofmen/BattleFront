@@ -69,7 +69,7 @@ void WareHouse::receive (Packet* packet) {
 
   if (!useToBuild(packet)) return; 
   if ((activeRail) && (activeRail->canAccept(packet))) {
-    activeRail->receive(packet);
+    activeRail->receive(packet, this);
     return; 
   }
 
@@ -130,11 +130,30 @@ bool Railroad::canAccept (Packet* packet) {
   return false; 
 }
 
-void Railroad::receive (Packet* packet) {
-  if (useToBuild(packet)) return; 
-  
+void Railroad::receive (Packet* packet, WareHouse* source) {
+  if (!useToBuild(packet)) return; 
+  packet->target = (source == oneHouse ? twoHouse : oneHouse); 
+  packets.push_back(packet); 
 }
 
 void Railroad::update (int elapsedTime) {
-  
+  static double speed = 0.0001; 
+  vector<Packet*> removes;
+  for (vector<Packet*>::iterator p = packets.begin(); p != packets.end(); ++p) {
+    point direction = ((*p)->target->position - (*p)->position);
+    double distance = direction.length();
+    if (distance < speed*elapsedTime) {
+      (*p)->target->receive(*p);
+      removes.push_back(*p);
+      continue;
+    }
+    direction.normalise(); 
+    direction *= (speed*elapsedTime);
+    (*p)->position += direction;
+  }
+
+  for (vector<Packet*>::iterator p = removes.begin(); p != removes.end(); ++p) {
+    vector<Packet*>::iterator rem = find(packets.begin(), packets.end(), *p);
+    packets.erase(rem); 
+  }
 }

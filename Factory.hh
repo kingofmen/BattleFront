@@ -28,7 +28,7 @@ struct Railroad : public Building, public Iterable<Railroad> {
   Railroad (WareHouse* w1, WareHouse* w2); 
 
   bool canAccept (Packet* packet);
-  void receive (Packet* packet);
+  void receive (Packet* packet, WareHouse* source);
   void update (int elapsedTime);
 
   point oneEnd;
@@ -37,6 +37,8 @@ struct Railroad : public Building, public Iterable<Railroad> {
   WareHouse* twoHouse; 
   int currentLoad; 
 
+private:
+  vector<Packet*> packets; 
 };
 
 struct WareHouse : public Building, public Iterable<WareHouse> {

@@ -6,6 +6,7 @@
 using namespace std; 
 class Tile; 
 class Vertex; 
+class WareHouse; 
 
 struct Packet {
   friend void initialise (); 
@@ -16,7 +17,7 @@ struct Packet {
   int size;
   point position; 
   Tile* tile; 
-  Vertex* target; 
+  WareHouse* target; 
 
   int getSize () const {return size;} 
   bool update (int elapsedTime); 
