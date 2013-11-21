@@ -278,6 +278,7 @@ int main (int argc, char** argv) {
       case SDL_KEYDOWN: 
 	if (SDLK_p == event.key.keysym.sym) paused = !paused;
 	else if (SDLK_q == event.key.keysym.sym) done = true; 
+	else if (SDLK_ESCAPE == event.key.keysym.sym) selectedWareHouse = 0; 
 	break;
       case SDL_MOUSEBUTTONDOWN: 
 	handleMouseClick(event.button); 
