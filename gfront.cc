@@ -147,7 +147,6 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
     house->capacity = 1000; 
 
     Railroad* rail = new Railroad(house, &(selectedFactory->m_WareHouse)); 
-    rail->toCompletion = 1000; 
     rail->capacity = 1000; 
     rail->player = true;
 
@@ -260,6 +259,8 @@ int main (int argc, char** argv) {
       Vertex::fight(timeThisFrame); 
       Vertex::move(timeThisFrame); 
 
+      for (Railroad::Iter r = Railroad::start(); r != Railroad::final(); ++r) (*r)->update(timeThisFrame); 
+
       int p1f = 0;
       int p2f = 0; 
       for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
@@ -267,9 +268,7 @@ int main (int argc, char** argv) {
 	if ((*f)->tile->avgControl((*f)->player) < 0.25) (*f)->player = !(*f)->player; 
 	if ((*f)->player) p1f++; else p2f++;
       }
-      for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
-	(*w)->update(); 
-      }
+      for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) (*w)->update(); 
 
       if (0 == p1f) {
 	std::cout << "Computer wins\n";

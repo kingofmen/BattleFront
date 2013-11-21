@@ -20,7 +20,7 @@ struct Building {
   double getCompFraction () {return 1.0 - 0.001*toCompletion;} 
 
 protected:
-  void useToBuild (Packet* packet); 
+  bool useToBuild (Packet* packet); 
 };
 
 struct Railroad : public Building, public Iterable<Railroad> {
@@ -28,6 +28,7 @@ struct Railroad : public Building, public Iterable<Railroad> {
 
   bool canAccept (Packet* packet);
   void receive (Packet* packet);
+  void update (int elapsedTime);
 
   point oneEnd;
   point twoEnd;

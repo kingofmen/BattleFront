@@ -1,5 +1,6 @@
 #include "Factory.hh"
 #include "Packet.hh" 
+#include <cmath> 
 
 Building::Building () 
   : toCompletion(0)
@@ -15,6 +16,7 @@ Railroad::Railroad (WareHouse* w1, WareHouse* w2)
   , currentLoad(0)
 {
   point line = twoEnd - oneEnd;
+  toCompletion = (int) floor(line.length() + 0.5); 
   line.normalise(); 
   line *= 15;
   oneEnd = w1->position + line;
@@ -39,16 +41,18 @@ WareHouse::WareHouse ()
   capacity = 1000; 
 }
 
-void Building::useToBuild (Packet* packet) {
+bool Building::useToBuild (Packet* packet) {
+  // Return true if the packet survives. 
   if (0 <= toCompletion) {
     if (toCompletion > packet->size) {
       toCompletion -= packet->size;
       delete packet;
-      return;
+      return false;
     }
     packet->size -= toCompletion;
     toCompletion = 0; 
   }
+  return true;
 }
 
 void WareHouse::receive (Packet* packet) {
@@ -58,7 +62,7 @@ void WareHouse::receive (Packet* packet) {
   // 3. Store.
   // 4. Release. 
 
-  useToBuild(packet); 
+  if (useToBuild(packet)) return; 
   if ((activeRail) && (activeRail->canAccept(packet))) {
     activeRail->receive(packet);
     return; 
@@ -113,6 +117,10 @@ bool Railroad::canAccept (Packet* packet) {
 }
 
 void Railroad::receive (Packet* packet) {
-  useToBuild(packet); 
+  if (useToBuild(packet)) return; 
+  
+}
+
+void Railroad::update (int elapsedTime) {
   
 }
