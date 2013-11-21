@@ -43,9 +43,11 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   bool release; 
   int content; 
 
-  void receive (Packet* packet);
-  void update ();
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
+  void receive (Packet* packet);
+  void toggle (); 
+  void update ();
+  
 
 private:
   Railroad* activeRail; 

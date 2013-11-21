@@ -19,6 +19,9 @@ Railroad::Railroad (WareHouse* w1, WareHouse* w2)
   line *= 15;
   oneEnd = w1->position + line;
   twoEnd = w2->position - line;
+
+  w1->addRailroad(this);
+  w2->addRailroad(this);
 }
 
 Factory::Factory () 
@@ -37,7 +40,7 @@ WareHouse::WareHouse ()
 }
 
 void Building::useToBuild (Packet* packet) {
-  if (0 < toCompletion) {
+  if (0 <= toCompletion) {
     if (toCompletion > packet->size) {
       toCompletion -= packet->size;
       delete packet;
@@ -65,6 +68,20 @@ void WareHouse::receive (Packet* packet) {
   if (capacity < content + packet->getSize()) return; 
   content += packet->getSize();
   delete packet; 
+}
+
+void WareHouse::toggle () {
+  if (0 == outgoing.size()) return; 
+  if (!activeRail) activeRail = outgoing.front(); 
+  else {
+    for (Railroad::Iter r = outgoing.begin(); r != outgoing.end(); ++r) {
+      if ((*r) != activeRail) continue;
+      ++r;
+      if (r == outgoing.end()) activeRail = 0;
+      else activeRail = (*r);
+      break; 
+    }
+  }
 }
 
 void WareHouse::update () {

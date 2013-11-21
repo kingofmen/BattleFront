@@ -105,8 +105,8 @@ void initialise () {
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
 }
 
-void handleMouseClick (const SDL_MouseButtonEvent& button) {
-  point click(button.x, button.y); 
+void handleMouseClick (const SDL_MouseButtonEvent& event) {
+  point click(event.x, event.y); 
   Factory* clickedFactory = 0; 
 
   for (Factory::Iter fac = Factory::start(); fac != Factory::final(); ++fac) {
@@ -123,8 +123,14 @@ void handleMouseClick (const SDL_MouseButtonEvent& button) {
   }
 
   if ((clickedFactory) && (clickedFactory == selectedFactory)) {
-    selectedFactory->toggle(); 
-    selectedFactory = 0;
+    if (SDL_BUTTON_LEFT == event.button) {
+      selectedFactory->toggle(); 
+      selectedFactory = 0;
+    }
+    else {
+      selectedFactory->m_WareHouse.toggle();
+    }
+
     return; 
   }
 
