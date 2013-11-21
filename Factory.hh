@@ -68,9 +68,6 @@ struct Factory : public Building, public Iterable<Factory> {
   WareHouse m_WareHouse; 
 
   void produce (int elapsedTime);
-  void toggle () {m_WareHouse.release = !m_WareHouse.release;} 
-  
-
 
 private:
 };

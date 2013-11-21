@@ -139,21 +139,22 @@ void Railroad::receive (Packet* packet, WareHouse* source) {
 void Railroad::update (int elapsedTime) {
   static double speed = 0.0001; 
   vector<Packet*> removes;
-  for (vector<Packet*>::iterator p = packets.begin(); p != packets.end(); ++p) {
-    point direction = ((*p)->target->position - (*p)->position);
+  for (unsigned int p = 0; p < packets.size(); ++p) {
+    point direction = (packets[p]->target->position - packets[p]->position);
     double distance = direction.length();
     if (distance < speed*elapsedTime) {
-      (*p)->target->receive(*p);
-      removes.push_back(*p);
+      packets[p]->target->receive(packets[p]);
+      packets[p] = 0; 
       continue;
     }
     direction.normalise(); 
     direction *= (speed*elapsedTime);
-    (*p)->position += direction;
+    packets[p]->position += direction;
   }
 
-  for (vector<Packet*>::iterator p = removes.begin(); p != removes.end(); ++p) {
-    vector<Packet*>::iterator rem = find(packets.begin(), packets.end(), *p);
-    packets.erase(rem); 
+  for (unsigned int p = 0; p < packets.size(); ++p) {
+    if (packets[p]) continue;
+    packets[p] = packets.back(); 
+    packets.pop_back(); 
   }
 }

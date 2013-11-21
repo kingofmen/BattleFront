@@ -23,7 +23,7 @@ const int tileSize = 10;
 const int gridWidth = windowWidth / tileSize;
 const int gridHeight = windowHeight / tileSize;
 
-Factory* selectedFactory = 0;
+WareHouse* selectedWareHouse = 0;
 
 void drawTiles () {
   static const double invMaxTroops = 0.2; 
@@ -62,14 +62,14 @@ void drawFactories () {
   }
   glEnd(); 
 
-  if (selectedFactory) {
+  if (selectedWareHouse) {
     glColor3d(1.0, 1.0, 1.0); 
     glBegin(GL_LINE_STRIP);
-    glVertex2d(selectedFactory->position.x() - 11, selectedFactory->position.y() - 11);
-    glVertex2d(selectedFactory->position.x() + 13, selectedFactory->position.y() - 11);
-    glVertex2d(selectedFactory->position.x() + 13, selectedFactory->position.y() + 13);
-    glVertex2d(selectedFactory->position.x() - 11, selectedFactory->position.y() + 13);
-    glVertex2d(selectedFactory->position.x() - 11, selectedFactory->position.y() - 11);
+    glVertex2d(selectedWareHouse->position.x() - 11, selectedWareHouse->position.y() - 11);
+    glVertex2d(selectedWareHouse->position.x() + 13, selectedWareHouse->position.y() - 11);
+    glVertex2d(selectedWareHouse->position.x() + 13, selectedWareHouse->position.y() + 13);
+    glVertex2d(selectedWareHouse->position.x() - 11, selectedWareHouse->position.y() + 13);
+    glVertex2d(selectedWareHouse->position.x() - 11, selectedWareHouse->position.y() - 11);
     glEnd();
   }
 }
@@ -107,35 +107,35 @@ void initialise () {
 
 void handleMouseClick (const SDL_MouseButtonEvent& event) {
   point click(event.x, event.y); 
-  Factory* clickedFactory = 0; 
+  WareHouse* clickedWareHouse = 0; 
 
-  for (Factory::Iter fac = Factory::start(); fac != Factory::final(); ++fac) {
+  for (WareHouse::Iter fac = WareHouse::start(); fac != WareHouse::final(); ++fac) {
     if (!(*fac)->player) continue; 
     if (100 < click.distanceSq((*fac)->position)) continue;
 
-    clickedFactory = (*fac);
+    clickedWareHouse = (*fac);
     break; 
   }
 
-  if ((clickedFactory) && (!selectedFactory)) {
-    selectedFactory = clickedFactory;
+  if ((clickedWareHouse) && (!selectedWareHouse)) {
+    selectedWareHouse = clickedWareHouse;
     return; 
   }
 
-  if ((clickedFactory) && (clickedFactory == selectedFactory)) {
+  if ((clickedWareHouse) && (clickedWareHouse == selectedWareHouse)) {
     if (SDL_BUTTON_LEFT == event.button) {
-      selectedFactory->toggle(); 
-      selectedFactory = 0;
+      selectedWareHouse->toggle(); 
     }
     else {
-      selectedFactory->m_WareHouse.toggle();
+      selectedWareHouse->release = !(selectedWareHouse->release); 
+      selectedWareHouse = 0;
     }
 
     return; 
   }
 
-  if (!clickedFactory) {
-    if (!selectedFactory) return; 
+  if (!clickedWareHouse) {
+    if (!selectedWareHouse) return; 
     Tile* closest = Tile::getClosest(click, 0); 
     if (!closest) return;
     if (0.75 > closest->avgControl(true)) return; 
@@ -145,11 +145,11 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
     house->player = true;
     house->capacity = 1000; 
 
-    Railroad* rail = new Railroad(house, &(selectedFactory->m_WareHouse)); 
+    Railroad* rail = new Railroad(house, selectedWareHouse);
     rail->capacity = 1000; 
     rail->player = true;
 
-    selectedFactory = 0;
+    selectedWareHouse = 0;
     return; 
   }
   
