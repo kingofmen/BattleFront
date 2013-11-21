@@ -1,28 +1,32 @@
 #include "Factory.hh"
 #include "Packet.hh" 
 
-vector<Factory*> Factory::allFactories; 
-vector<WareHouse*> WareHouse::allWareHouses; 
-
 Building::Building () 
   : toCompletion(0)
 {}
 
-Building::~Building () {} 
+Railroad::Railroad (WareHouse* w1, WareHouse* w2) 
+  : Building()
+  , Iterable<Railroad>(this)
+  , oneEnd(w1->position)
+  , twoEnd(w2->position)
+  , oneHouse(w1)
+  , twoHouse(w2)
+  , currentLoad(0)
+{}
 
 Factory::Factory () 
   : Building()
-{
-  allFactories.push_back(this); 
-}
+  , Iterable<Factory>(this)
+{}
 
 WareHouse::WareHouse () 
   : Building()
+  , Iterable<WareHouse>(this)
   , release(true)
   , content(0)
   , activeRail(0)
 {
-  allWareHouses.push_back(this);
   capacity = 1000; 
 }
 
@@ -64,25 +68,6 @@ void WareHouse::update () {
   newPacket->position = position; 
 }
 
-Factory::~Factory () {
-  for (unsigned int i = 0; i < allFactories.size(); ++i) {
-    if (allFactories[i] != this) continue;
-    allFactories[i] = allFactories.back();
-    break;
-  }
-  allFactories.pop_back(); 
-}
-
-WareHouse::~WareHouse () {
-  for (unsigned int i = 0; i < allWareHouses.size(); ++i) {
-    if (allWareHouses[i] != this) continue;
-    allWareHouses[i] = allWareHouses.back();
-    break;
-  }
-  allWareHouses.pop_back(); 
-}
-
-
 void Factory::produce (int elapsedTime) {
   timeSinceProduction += elapsedTime;
   if (timeSinceProduction < timeToProduce) return; 
@@ -94,11 +79,6 @@ void Factory::produce (int elapsedTime) {
   product->player1 = player; 
   m_WareHouse.receive(product); 
 }
-
-Railroad::Railroad () 
-  : Building()
-  , currentLoad(0)
-{}
 
 bool Railroad::canAccept (Packet* packet) {
   if (toCompletion > 0) return true;

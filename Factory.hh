@@ -7,10 +7,10 @@ using namespace std;
 class Packet;
 class Tile; 
 class Object;
+struct WareHouse;
 
 struct Building {
   Building ();
-  ~Building ();
 
   bool player; 
   point position; 
@@ -18,43 +18,39 @@ struct Building {
   int toCompletion; 
 };
 
-struct Railroad : public Building {
-  Railroad (); 
+struct Railroad : public Building, public Iterable<Railroad> {
+  Railroad (WareHouse* w1, WareHouse* w2); 
 
   bool canAccept (Packet* packet);
   void receive (Packet* packet);
 
   point oneEnd;
   point twoEnd;
+  WareHouse* oneHouse;
+  WareHouse* twoHouse; 
   int currentLoad; 
-  
+
 };
 
-struct WareHouse : public Building {
+struct WareHouse : public Building, public Iterable<WareHouse> {
   WareHouse ();
-  ~WareHouse ();
 
   bool release; 
   int content; 
 
   void receive (Packet* packet);
   void update ();
-
-  typedef vector<WareHouse*>::iterator Iter;
-  static Iter start () {return allWareHouses.begin();}
-  static Iter final () {return allWareHouses.end();}
+  void addRailroad (Railroad* r) {outgoing.push_back(r);}
 
 private:
   Railroad* activeRail; 
   vector<Railroad*> outgoing; 
-  static vector<WareHouse*> allWareHouses;
 };
 
-struct Factory : public Building {
+struct Factory : public Building, public Iterable<Factory> {
   friend void createFactory (Object*); 
 
   Factory ();
-  ~Factory (); 
   int timeToProduce; // All times in microseconds
   int timeSinceProduction;
   Tile* tile; 
@@ -62,14 +58,14 @@ struct Factory : public Building {
   void produce (int elapsedTime);
   void toggle () {m_WareHouse.release = !m_WareHouse.release;} 
 
-  typedef vector<Factory*>::iterator Iter;
-  static Iter start () {return allFactories.begin();}
-  static Iter final () {return allFactories.end();}
+  //typedef vector<Factory*>::iterator Iter;
+  //static Iter start () {return allFactories.begin();}
+  //static Iter final () {return allFactories.end();}
 
 private:
   WareHouse m_WareHouse; 
 
-  static vector<Factory*> allFactories;
+  //static vector<Factory*> allFactories;
 };
 
 
