@@ -18,7 +18,7 @@ struct Building {
   int toCompletion; 
   Tile* tile; 
 
-  double getCompFraction () {return 1.0 - 0.001*toCompletion;} 
+  virtual double getCompFraction () const {return 1.0 - 0.001*toCompletion;} 
 
 protected:
   bool useToBuild (Packet* packet); 
@@ -29,6 +29,7 @@ struct Railroad : public Building, public Iterable<Railroad> {
   Railroad (WareHouse* w1, WareHouse* w2); 
 
   bool canAccept (Packet* packet);
+  virtual double getCompFraction () const; 
   void receive (Packet* packet, WareHouse* source);
   void update (int elapsedTime);
   void upgrade (); 

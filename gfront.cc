@@ -90,9 +90,12 @@ void drawFactories () {
 void drawRailroads () {
   glBegin(GL_LINES);
   for (Railroad::Iter r = Railroad::start(); r != Railroad::final(); ++r) {
-    glColor3d(0.2 + 0.8*(*r)->getCompFraction(), 0.2 + 0.8*(*r)->getCompFraction(), 0.2 + 0.8*(*r)->getCompFraction()); 
+    glColor3d(1.0, 1.0, 1.0); 
+    point end = (*r)->twoEnd - (*r)->oneEnd; 
+    end *= (*r)->getCompFraction();
+    end += (*r)->oneEnd;
     glVertex2d((*r)->oneEnd.x(), (*r)->oneEnd.y());
-    glVertex2d((*r)->twoEnd.x(), (*r)->twoEnd.y());
+    glVertex2d(end.x(), end.y()); 
     if ((*r)->oneHouse->activeRail == (*r)) {
       glVertex2d((*r)->oneEnd.x(), (*r)->oneEnd.y());
       glVertex2d((*r)->oneHouse->position.x(), (*r)->oneHouse->position.y());
@@ -167,7 +170,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 	house->player = true;
 	house->capacity = 1000; 
 	
-	Railroad* rail = new Railroad(house, selectedWareHouse);
+	Railroad* rail = new Railroad(selectedWareHouse, house);
 	rail->upgrade();
 	rail->player = true;
 	

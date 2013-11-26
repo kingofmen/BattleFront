@@ -144,6 +144,15 @@ bool Railroad::canAccept (Packet* packet) {
   return false; 
 }
 
+double Railroad::getCompFraction () const {
+  if (0 >= toCompletion) return 1.0;
+  point line = twoEnd;
+  line -= oneEnd;
+  double ret = line.length();
+  ret = 1.0 - toCompletion / ret;
+  return ret;
+}
+
 Railroad* Railroad::findConnector (WareHouse* w1, WareHouse* w2) {
   for (Iter r = start(); r != final(); ++r) {
     if (((*r)->oneHouse == w1) && ((*r)->twoHouse == w2)) return (*r);

@@ -6,4 +6,7 @@
  * Delete warehouses
  * Expand railroad capacity (check) 
  * Build railroads without new warehouse (check)
- * Show railroad construction as length of line, not brightness 
+ * Show railroad construction as length of line, not brightness (check) 
+ * Show railroad capacity 
+ * Build warehouse on existing railroad
+ 
