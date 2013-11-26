@@ -141,6 +141,11 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   point click(event.x, event.y); 
   WareHouse* clickedWareHouse = 0; 
 
+  static int numkeys[1]; 
+  static const Uint8* keystates = SDL_GetKeyboardState(numkeys);
+  static const Uint8 KEY_DOWN = 1;
+  static const int BUILDKEY = SDL_SCANCODE_LCTRL; 
+
   for (WareHouse::Iter fac = WareHouse::start(); fac != WareHouse::final(); ++fac) {
     if (!(*fac)->player) continue; 
     if (100 < click.distanceSq((*fac)->position)) continue;
@@ -149,42 +154,56 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
     break; 
   }
 
-  if ((clickedWareHouse) && (!selectedWareHouse)) {
-    selectedWareHouse = clickedWareHouse;
-    return; 
-  }
-
-  if ((clickedWareHouse) && (clickedWareHouse == selectedWareHouse)) {
-    if (SDL_BUTTON_LEFT == event.button) {
-      selectedWareHouse->toggle(); 
+  if (KEY_DOWN == keystates[BUILDKEY]) {
+    if (!clickedWareHouse) {
+      if (selectedWareHouse) {
+	// Build new railroad and warehouse
+	Tile* closest = Tile::getClosest(click, 0); 
+	if (!closest) return;
+	if (0.75 > closest->avgControl(true)) return; 
+	
+	WareHouse* house = new WareHouse(click);
+	house->toCompletion = 1000;
+	house->player = true;
+	house->capacity = 1000; 
+	
+	Railroad* rail = new Railroad(house, selectedWareHouse);
+	rail->upgrade();
+	rail->player = true;
+	
+	selectedWareHouse = 0;
+      }
+      else {
+	// Build new WareHouse, no railroad. 
+      }
     }
     else {
-      selectedWareHouse->release = !(selectedWareHouse->release); 
-      selectedWareHouse = 0;
+      if (selectedWareHouse) {
+	if (clickedWareHouse == selectedWareHouse) {
+	  // Capacity upgrade
+	}
+	else {
+	  // Build new railroad, or improve existing one
+	  Railroad* existing = Railroad::findConnector(selectedWareHouse, clickedWareHouse); 
+	  if (!existing) {
+	    existing = new Railroad(selectedWareHouse, clickedWareHouse); 
+	    existing->player = true;
+	  }
+	  existing->upgrade(); 
+	}
+      }
+      else {
+	// No interpretation of this.
+      }
     }
-
-    return; 
   }
-
-  if (!clickedWareHouse) {
-    if (!selectedWareHouse) return; 
-    Tile* closest = Tile::getClosest(click, 0); 
-    if (!closest) return;
-    if (0.75 > closest->avgControl(true)) return; 
-
-    WareHouse* house = new WareHouse(click);
-    house->toCompletion = 1000;
-    house->player = true;
-    house->capacity = 1000; 
-
-    Railroad* rail = new Railroad(house, selectedWareHouse);
-    rail->capacity = 1000; 
-    rail->player = true;
-
-    selectedWareHouse = 0;
-    return; 
-  }
-  
+  else {
+    if ((selectedWareHouse) && (clickedWareHouse == selectedWareHouse)) {
+      if (SDL_BUTTON_LEFT == event.button) selectedWareHouse->toggle(); 
+      else selectedWareHouse->release = !(selectedWareHouse->release); 
+    }
+    else selectedWareHouse = clickedWareHouse;
+  }  
 }
 
 void createFactory (Object* fact) {

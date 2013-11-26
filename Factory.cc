@@ -5,6 +5,7 @@
 
 Building::Building (point p) 
   : position(p)
+  , capacity(0)
   , toCompletion(0)
 {
   tile = Tile::getClosest(position, 0); 
@@ -20,7 +21,6 @@ Railroad::Railroad (WareHouse* w1, WareHouse* w2)
   , currentLoad(0)
 {
   point line = twoEnd - oneEnd;
-  toCompletion = (int) floor(line.length() + 0.5); 
   line.normalise(); 
   line *= 15;
   oneEnd = w1->position + line;
@@ -144,6 +144,14 @@ bool Railroad::canAccept (Packet* packet) {
   return false; 
 }
 
+Railroad* Railroad::findConnector (WareHouse* w1, WareHouse* w2) {
+  for (Iter r = start(); r != final(); ++r) {
+    if (((*r)->oneHouse == w1) && ((*r)->twoHouse == w2)) return (*r);
+    if (((*r)->oneHouse == w2) && ((*r)->twoHouse == w1)) return (*r);
+  }
+  return 0; 
+}
+
 void Railroad::receive (Packet* packet, WareHouse* source) {
   if (!useToBuild(packet)) return; 
   packet->target = (source == oneHouse ? twoHouse : oneHouse); 
@@ -157,6 +165,7 @@ void Railroad::update (int elapsedTime) {
   for (unsigned int p = 0; p < packets.size(); ++p) {
     packets[p]->tile = Tile::getClosest(packets[p]->position, packets[p]->tile);
     if (1 >= packets[p]->tile->frontDistance()) {
+      currentLoad -= packets[p]->size; 
       releaseTroops(packets[p]->size, packets[p]->tile); 
       delete packets[p];
       packets[p] = 0;
@@ -181,4 +190,10 @@ void Railroad::update (int elapsedTime) {
     packets[p] = packets.back(); 
     packets.pop_back(); 
   }
+}
+
+void Railroad::upgrade () {
+  point line = twoEnd - oneEnd;
+  toCompletion += (int) floor(line.length() + 0.5);   
+  capacity += 100; 
 }

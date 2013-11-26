@@ -31,6 +31,9 @@ struct Railroad : public Building, public Iterable<Railroad> {
   bool canAccept (Packet* packet);
   void receive (Packet* packet, WareHouse* source);
   void update (int elapsedTime);
+  void upgrade (); 
+
+  static Railroad* findConnector (WareHouse* w1, WareHouse* w2); 
 
   point oneEnd;
   point twoEnd;
