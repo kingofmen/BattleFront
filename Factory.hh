@@ -28,8 +28,10 @@ protected:
 struct Railroad : public Building, public Iterable<Railroad> {
   Railroad (WareHouse* w1, WareHouse* w2); 
 
+  void calcEnds (); 
   bool canAccept (Packet* packet);
   virtual double getCompFraction () const; 
+  int getLength () const; 
   void receive (Packet* packet, WareHouse* source);
   void update (int elapsedTime);
   void upgrade (); 
@@ -57,6 +59,7 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
 
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
   void receive (Packet* packet);
+  void replaceRail (Railroad* oldRail, Railroad* newRail);
   void toggle (); 
   void update ();
   

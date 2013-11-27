@@ -21,17 +21,10 @@ Railroad::Railroad (WareHouse* w1, WareHouse* w2)
   , currentLoad(0)
   , locosToBuild(0)
 {
-  point line = twoEnd - oneEnd;
-  line.normalise(); 
-  line *= 15;
-  oneEnd = w1->position + line;
-  twoEnd = w2->position - line;
-
-  line = twoEnd - oneEnd;
-  toCompletion = (int) floor(line.length() + 0.5);   
-
+  calcEnds(); 
   w1->addRailroad(this);
   w2->addRailroad(this);
+  toCompletion = getLength(); 
 }
 
 Factory::Factory (point p) 
@@ -102,6 +95,18 @@ void Building::releaseTroops (int size, Tile* t) {
   if (best) best->troops += size; 
 }
 
+void WareHouse::replaceRail (Railroad* oldRail, Railroad* newRail) {
+  if (activeRail == oldRail) activeRail = newRail;
+  bool found = false; 
+  for (unsigned int i = 0; i < outgoing.size(); ++i) {
+    if (outgoing[i] != oldRail) continue;
+    outgoing[i] = newRail;
+    found = true;
+    break; 
+  }
+  if (!found) outgoing.push_back(newRail); 
+}
+
 void WareHouse::toggle () {
   if (0 == outgoing.size()) return; 
   if (!activeRail) activeRail = outgoing.front(); 
@@ -143,6 +148,16 @@ void Factory::produce (int elapsedTime) {
   m_WareHouse.receive(product); 
 }
 
+void Railroad::calcEnds () {
+  oneEnd = oneHouse->position;
+  twoEnd = twoHouse->position;
+  point line = twoEnd - oneEnd;
+  line.normalise(); 
+  line *= 15;
+  oneEnd = oneHouse->position + line;
+  twoEnd = twoHouse->position - line;
+}
+
 bool Railroad::canAccept (Packet* packet) {
   if (capacity > currentLoad) return true;
   if (0 < locosToBuild) return true;
@@ -151,11 +166,15 @@ bool Railroad::canAccept (Packet* packet) {
 
 double Railroad::getCompFraction () const {
   if (0 >= toCompletion) return 1.0;
-  point line = twoEnd;
-  line -= oneEnd;
-  double ret = line.length();
+  double ret = getLength();
   ret = 1.0 - toCompletion / ret;
   return ret;
+}
+
+int Railroad::getLength () const {
+  point line = twoEnd;
+  line -= oneEnd;
+  return (int) floor(line.length() + 0.5); 
 }
 
 Railroad* Railroad::findConnector (WareHouse* w1, WareHouse* w2) {

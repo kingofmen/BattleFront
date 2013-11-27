@@ -153,8 +153,10 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   static const Uint8 KEY_DOWN = 1;
   static const int BUILDKEY = SDL_SCANCODE_LCTRL; 
 
+  WareHouse* closest = 0;
   for (WareHouse::Iter fac = WareHouse::start(); fac != WareHouse::final(); ++fac) {
     if (!(*fac)->player) continue; 
+    if ((!closest) || (click.distanceSq(closest->position) > click.distanceSq((*fac)->position))) closest = (*fac); 
     if (100 < click.distanceSq((*fac)->position)) continue;
 
     clickedWareHouse = (*fac);
@@ -163,6 +165,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 
   if (KEY_DOWN == keystates[BUILDKEY]) {
     if (!clickedWareHouse) {
+      if (1600 > click.distanceSq(closest->position)) return; // No warehouse building this close to others 
       if (selectedWareHouse) {
 	// Build new railroad and warehouse
 	Tile* closest = Tile::getClosest(click, 0); 
@@ -182,6 +185,53 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       }
       else {
 	// Build new WareHouse, no railroad. 
+
+	// Check if new WareHouse splits a railroad in two
+	Railroad* toSplit = 0; 
+	for (Railroad::Iter r = Railroad::start(); r != Railroad::final(); ++r) {
+	  point xaxis = (*r)->twoEnd - (*r)->oneEnd;
+	  point origin = (*r)->oneEnd; 
+	  xaxis.normalise(); 
+	  //point yaxis(-(xaxis.y()), xaxis.x()); 
+	  point clickprime = click - origin;
+	  double radius = clickprime.length();
+	  double angle = xaxis.angle(clickprime); 
+	  double ydistance = radius * sin(angle); 
+	  if (10 < fabs(ydistance)) continue; 
+	  double xdistance = radius * cos(angle); 
+	  click = origin + xaxis*xdistance; 
+	  toSplit = (*r);
+	}
+	WareHouse* house = new WareHouse(click); 
+	house->toCompletion = 1000;
+	house->player = true;
+	house->capacity = 1000; 
+	if (toSplit) {
+	  WareHouse* oldTerminus = toSplit->twoHouse; 
+	  Railroad* newRail = new Railroad(house, oldTerminus);
+	  int oldLength = toSplit->getLength(); 
+	  oldTerminus->replaceRail(toSplit, newRail); 
+	  house->addRailroad(toSplit); 
+	  house->toggle(); 
+	  int locos = toSplit->capacity;
+	  newRail->capacity = (locos/2);
+	  toSplit->capacity = (locos/2) + (locos%2); 
+	  toSplit->twoHouse = house; 
+	  toSplit->calcEnds(); 
+
+	  if (0 < toSplit->toCompletion) {
+	    int newLength = toSplit->getLength(); 
+	    int completed = oldLength - toSplit->toCompletion; 
+	    if (completed > newLength) {
+	      toSplit->toCompletion = 0;
+	      newRail->toCompletion -= (completed - newLength);
+	    }
+	    else toSplit->toCompletion -= (oldLength - newLength); 
+	  }
+	  else newRail->toCompletion = 0; 
+
+	}
+	
       }
     }
     else {
