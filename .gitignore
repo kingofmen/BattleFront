@@ -4,3 +4,17 @@ SDL2-2.0.0/
 ParadoxParser-master/
 front
 
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
