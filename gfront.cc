@@ -197,6 +197,8 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 	double ydistance = radius * sin(angle); 
 	if (12 < fabs(ydistance)) continue; 
 	double xdistance = radius * cos(angle); 
+	if (xdistance > (*r)->getLength()) continue;
+	if (xdistance < 0) continue; 
 	click = origin + xaxis*xdistance; 
 	toSplit = (*r);
       }
