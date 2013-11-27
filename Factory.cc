@@ -86,13 +86,19 @@ void WareHouse::receive (Packet* packet) {
 
 void Building::releaseTroops (int size, Tile* t) {
   if (!t) t = tile; 
-  Vertex* best = 0; 
+  int numVertices = 0; 
   for (Vertex::Iter v = t->startv(); v != t->finalv(); ++v) {
     if ((*v)->player != player) continue; 
-    if ((best) && ((*v)->getFrontDistance() >= best->getFrontDistance())) continue;
-    best = (*v);
+    if (1 >= (*v)->getFrontDistance()) continue;
+    numVertices++; 
   }
-  if (best) best->troops += size; 
+  if (0 == numVertices) return;
+  size /= numVertices; 
+  for (Vertex::Iter v = t->startv(); v != t->finalv(); ++v) {
+    if ((*v)->player != player) continue; 
+    if (1 >= (*v)->getFrontDistance()) continue;
+    (*v)->troops += size; 
+  }
 }
 
 void WareHouse::replaceRail (Railroad* oldRail, Railroad* newRail) {

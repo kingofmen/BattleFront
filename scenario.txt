@@ -1,7 +1,23 @@
 factory = {
   human = yes
   xpos = 300
-  ypos = 400
+  ypos = 300
+  timeToProduce = 1000000
+  packetSize = 50
+}
+
+factory = {
+  human = yes
+  xpos = 300
+  ypos = 500
+  timeToProduce = 1000000
+  packetSize = 50
+}
+
+factory = {
+  human = yes
+  xpos = 300
+  ypos = 100
   timeToProduce = 1000000
   packetSize = 50
 }
