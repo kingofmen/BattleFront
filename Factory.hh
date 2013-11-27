@@ -40,6 +40,7 @@ struct Railroad : public Building, public Iterable<Railroad> {
 
   point oneEnd;
   point twoEnd;
+  point ortho; 
   WareHouse* oneHouse;
   WareHouse* twoHouse; 
   int currentLoad; 

@@ -153,9 +153,12 @@ void Railroad::calcEnds () {
   twoEnd = twoHouse->position;
   point line = twoEnd - oneEnd;
   line.normalise(); 
+  ortho.x() = -(line.y());
+  ortho.y() = line.x(); 
   line *= 15;
   oneEnd = oneHouse->position + line;
   twoEnd = twoHouse->position - line;
+  
 }
 
 bool Railroad::canAccept (Packet* packet) {

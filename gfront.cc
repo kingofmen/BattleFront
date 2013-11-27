@@ -110,6 +110,18 @@ void drawRailroads () {
     }
   }
   glEnd(); 
+
+  glColor3d(0.0, 0.0, 0.0);
+  glBegin(GL_TRIANGLES);
+  for (Railroad::Iter r = Railroad::start(); r != Railroad::final(); ++r) {
+    for (int loc = 0; loc < ((*r)->capacity - (*r)->currentLoad - (*r)->locosToBuild); ++loc) {
+      point center = (*r)->oneEnd + (*r)->ortho * 10 * (1 + loc); 
+      glVertex2d(center.x() + 0.0, center.y() - 2.9);
+      glVertex2d(center.x() + 2.5, center.y() + 2.1);
+      glVertex2d(center.x() - 2.5, center.y() + 2.1);
+    }
+  }
+  glEnd(); 
 }
 
 void drawPackets () {
