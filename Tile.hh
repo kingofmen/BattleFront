@@ -27,6 +27,7 @@ struct Vertex : public Iterable<Vertex> {
   Iter startn () {return neighbours.begin();}
   Iter finaln () {return neighbours.end();}
 
+  static void attrite (int elapsedTime); 
   static void fight (int elapsedTime); 
   static Vertex* getClosestFighting (const point& pos, bool player); 
   static void move (int elapsedTime);  
@@ -50,6 +51,7 @@ private:
   static double coolDownFactor; // Milliseconds per troop received
   static double fightRate; 
   static double minimumGarrison; 
+  static double attritionRate; 
 };
 
 struct Tile {

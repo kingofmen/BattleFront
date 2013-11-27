@@ -144,6 +144,7 @@ void initialise () {
   Vertex::fightRate = config->safeGetFloat("fightRate", Vertex::fightRate); 
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
   Vertex::coolDownFactor = config->safeGetFloat("cooldown", Vertex::coolDownFactor); 
+  Vertex::attritionRate = config->safeGetFloat("attrition", Vertex::attritionRate); 
 }
 
 void handleKeyPress (SDL_KeyboardEvent& key) {
@@ -353,6 +354,7 @@ int main (int argc, char** argv) {
     SDL_GL_SwapWindow(win); 
 
     if (!paused) {
+      Vertex::attrite(timeThisFrame); 
       Vertex::fight(timeThisFrame); 
       Vertex::move(timeThisFrame); 
 

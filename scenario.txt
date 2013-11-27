@@ -25,7 +25,24 @@ factory = {
 factory = {
   human = no
   xpos = 800
-  ypos = 400
+  ypos = 300
   timeToProduce = 500000
   packetSize = 25
 }
+
+factory = {
+  human = no
+  xpos = 800
+  ypos = 100
+  timeToProduce = 500000
+  packetSize = 25
+}
+
+factory = {
+  human = no
+  xpos = 800
+  ypos = 500
+  timeToProduce = 500000
+  packetSize = 25
+}
+

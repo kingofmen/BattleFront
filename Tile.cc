@@ -8,6 +8,7 @@ double Vertex::troopMoveRate = 0.001;
 double Vertex::fightRate = 0.0000001; 
 double Vertex::minimumGarrison = 1; 
 double Vertex::coolDownFactor = 10000;
+double Vertex::attritionRate = 0.01; 
 
 Vertex::Vertex (point p, bool c, double t) 
   : Iterable<Vertex>(this)
@@ -39,6 +40,16 @@ void Vertex::setNeighbour (Direction card, Vertex* n) {
     assert(false); 
   }
   neighbours[card] = n; 
+}
+
+void Vertex::attrite (int elapsedTime) {
+  // attritionRate gives troops lost in one second. 
+
+  double loss = exp(elapsedTime * 0.000001 * log(1 - attritionRate)); 
+  for (Iter v = start(); v != final(); ++v) {
+    (*v)->troops *= loss;
+    if ((*v)->troops < minimumGarrison) (*v)->troops = minimumGarrison; 
+  }
 }
 
 void Vertex::fight (int elapsedTime) {
