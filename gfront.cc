@@ -90,6 +90,10 @@ void drawFactories () {
 void drawRailroads () {
   glBegin(GL_LINES);
   for (Railroad::Iter r = Railroad::start(); r != Railroad::final(); ++r) {
+    glColor3d(0.2, 0.2, 0.2);
+    glVertex2d((*r)->oneEnd.x(), (*r)->oneEnd.y());
+    glVertex2d((*r)->twoEnd.x(), (*r)->twoEnd.y());
+
     glColor3d(1.0, 1.0, 1.0); 
     point end = (*r)->twoEnd - (*r)->oneEnd; 
     end *= (*r)->getCompFraction();

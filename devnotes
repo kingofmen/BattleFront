@@ -8,5 +8,6 @@
  * Build railroads without new warehouse (check)
  * Show railroad construction as length of line, not brightness (check) 
  * Show railroad capacity 
+ * Locomotives for capacity (check) 
  * Build warehouse on existing railroad
  

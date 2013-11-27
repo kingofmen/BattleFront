@@ -19,12 +19,16 @@ Railroad::Railroad (WareHouse* w1, WareHouse* w2)
   , oneHouse(w1)
   , twoHouse(w2)
   , currentLoad(0)
+  , locosToBuild(0)
 {
   point line = twoEnd - oneEnd;
   line.normalise(); 
   line *= 15;
   oneEnd = w1->position + line;
   twoEnd = w2->position - line;
+
+  line = twoEnd - oneEnd;
+  toCompletion = (int) floor(line.length() + 0.5);   
 
   w1->addRailroad(this);
   w2->addRailroad(this);
@@ -140,7 +144,8 @@ void Factory::produce (int elapsedTime) {
 }
 
 bool Railroad::canAccept (Packet* packet) {
-  if (capacity >= packet->size + currentLoad) return true;
+  if (capacity > currentLoad) return true;
+  if (0 < locosToBuild) return true;
   return false; 
 }
 
@@ -163,9 +168,14 @@ Railroad* Railroad::findConnector (WareHouse* w1, WareHouse* w2) {
 
 void Railroad::receive (Packet* packet, WareHouse* source) {
   if (!useToBuild(packet)) return; 
+  if (0 < locosToBuild) {
+    locosToBuild--;
+    delete packet; 
+    return; 
+  }
   packet->target = (source == oneHouse ? twoHouse : oneHouse); 
   packets.push_back(packet); 
-  currentLoad += packet->size; 
+  currentLoad++; 
 }
 
 void Railroad::update (int elapsedTime) {
@@ -174,7 +184,7 @@ void Railroad::update (int elapsedTime) {
   for (unsigned int p = 0; p < packets.size(); ++p) {
     packets[p]->tile = Tile::getClosest(packets[p]->position, packets[p]->tile);
     if (1 >= packets[p]->tile->frontDistance()) {
-      currentLoad -= packets[p]->size; 
+      currentLoad--; 
       releaseTroops(packets[p]->size, packets[p]->tile); 
       delete packets[p];
       packets[p] = 0;
@@ -185,7 +195,7 @@ void Railroad::update (int elapsedTime) {
     double distance = direction.length();
     if (distance < speed*elapsedTime) {
       packets[p]->target->receive(packets[p]);
-      currentLoad -= packets[p]->size; 
+      currentLoad--; 
       packets[p] = 0; 
       continue;
     }
@@ -202,7 +212,6 @@ void Railroad::update (int elapsedTime) {
 }
 
 void Railroad::upgrade () {
-  point line = twoEnd - oneEnd;
-  toCompletion += (int) floor(line.length() + 0.5);   
-  capacity += 100; 
+  capacity++; 
+  locosToBuild++; 
 }

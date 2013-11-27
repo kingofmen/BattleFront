@@ -41,6 +41,7 @@ struct Railroad : public Building, public Iterable<Railroad> {
   WareHouse* oneHouse;
   WareHouse* twoHouse; 
   int currentLoad; 
+  int locosToBuild; 
 
 private:
   vector<Packet*> packets; 
