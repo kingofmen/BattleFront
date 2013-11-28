@@ -1,10 +1,12 @@
-#include "SDL.h"
 #ifdef WINDOWS
+#include <windows.h> 
 #include <gl/gl.h>
+#define SDL_MAIN_HANDLED
 #else
 #include "gl.h"
 #include <sys/times.h>
 #endif
+#include "SDL.h"
 #include <cassert> 
 #include <iostream> 
 #include <sys/time.h>
@@ -286,7 +288,10 @@ void createFactory (Object* fact) {
   fac->m_WareHouse.player = fac->player;
 }
 
-int main (int argc, char** argv) {
+int main (int argc, char* argv[]) {
+  SDL_SetMainReady();  
+  std::cout << "Hello, World\n" << std::endl; 
+  
   initialise(); 
 
   vector<Factory*> factories; 
@@ -320,21 +325,27 @@ int main (int argc, char** argv) {
     }
   }
 
+  
   Object* scenario = processFile("scenario.txt");
   objvec facts = scenario->getValue("factory"); 
   for (objiter fact = facts.begin(); fact != facts.end(); ++fact) {
     createFactory(*fact); 
   }
-
-  int error = SDL_Init(SDL_INIT_EVERYTHING);
-  assert(-1 != error); 
+   
+  int error = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS); 
+  if (-1 == error) {
+    cout << SDL_GetError() << endl;
+    exit(1); 
+  }
   SDL_Window* win = SDL_CreateWindow("BattleFront", 100, 100, windowWidth, windowHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
   if (!win) {
     cout << SDL_GetError() << endl;
+    assert(win);    
     return 1;
   }
 
   SDL_GLContext glcontext = SDL_GL_CreateContext(win);
+  assert(glcontext); 
   glClearColor(1.0, 1.0, 1.0, 0.5); 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -351,8 +362,8 @@ int main (int argc, char** argv) {
     timersub(&currTime, &prevTime, &passTime);
     int timeThisFrame = (passTime.tv_sec*1e6 + passTime.tv_usec); 
     prevTime = currTime; 
-    //glClear(GL_COLOR_BUFFER_BIT); 
-    //glColor3d(1.0, 0.0, 0.0); 
+    glClear(GL_COLOR_BUFFER_BIT); 
+    glColor3d(1.0, 0.0, 0.0); 
     drawTiles();
     drawFactories(); 
     drawRailroads();
@@ -395,10 +406,13 @@ int main (int argc, char** argv) {
     }
   }
 
-  SDL_Quit();
-
   for (Tile::Iter tile = Tile::start(); tile != Tile::final(); ++tile) delete (*tile);
   for (Vertex::Iter v = Vertex::start(); v != Vertex::final(); ++v) delete (*v); 
+  
+  SDL_Quit();
+
 
   return 0;
 }
+
+
