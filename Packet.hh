@@ -27,7 +27,6 @@ struct Packet {
   static Iter final () {return allPackets.end();} 
 
 private:
-  static double speed; // Pixels per microsecond
   static vector<Packet*> allPackets; 
 };
 

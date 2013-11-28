@@ -2,7 +2,6 @@
 #include "Tile.hh" 
 #include <cmath> 
 
-double Packet::speed = 0.0001; 
 vector<Packet*> Packet::allPackets; 
 
 Packet::Packet () 

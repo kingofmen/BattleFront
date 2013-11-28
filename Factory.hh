@@ -26,6 +26,8 @@ protected:
 };
 
 struct Railroad : public Building, public Iterable<Railroad> {
+  friend void initialise ();
+  
   Railroad (WareHouse* w1, WareHouse* w2); 
 
   void calcEnds (); 
@@ -47,6 +49,7 @@ struct Railroad : public Building, public Iterable<Railroad> {
   int locosToBuild; 
 
 private:
+  static double speed; // Pixels per microsecond
   vector<Packet*> packets; 
 };
 

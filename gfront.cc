@@ -145,12 +145,13 @@ void drawPackets () {
 
 void initialise () {
   Object* config = processFile("config.txt"); 
-  Packet::speed = config->safeGetFloat("packetSpeed", Packet::speed); 
+  Railroad::speed = config->safeGetFloat("packetSpeed", Railroad::speed); 
   Vertex::troopMoveRate = config->safeGetFloat("troopMoveRate", Vertex::troopMoveRate);
   Vertex::fightRate = config->safeGetFloat("fightRate", Vertex::fightRate); 
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
   Vertex::coolDownFactor = config->safeGetFloat("cooldown", Vertex::coolDownFactor); 
-  Vertex::attritionRate = config->safeGetFloat("attrition", Vertex::attritionRate); 
+  Vertex::attritionRate = config->safeGetFloat("attrition", Vertex::attritionRate);
+  
 }
 
 void handleKeyPress (SDL_KeyboardEvent& key) {
@@ -329,7 +330,8 @@ int main (int argc, char* argv[]) {
   for (objiter fact = facts.begin(); fact != facts.end(); ++fact) {
     createFactory(*fact); 
   }
-   
+
+  // Do not use INIT_EVERYTHING because that includes haptic, and gives me trouble on Windows. 
   int error = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS); 
   if (-1 == error) {
     cout << SDL_GetError() << endl;

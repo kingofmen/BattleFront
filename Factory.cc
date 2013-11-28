@@ -4,6 +4,8 @@
 #include <cmath> 
 #include <cassert> 
 
+double Railroad::speed = 0.0001; 
+
 Building::Building (point p) 
   : position(p)
   , capacity(0)
@@ -208,7 +210,6 @@ void Railroad::receive (Packet* packet, WareHouse* source) {
 }
 
 void Railroad::update (int elapsedTime) {
-  static double speed = 0.0001; 
   vector<Packet*> removes;
   assert(packets.size() <= capacity); 
   for (unsigned int p = 0; p < packets.size(); ++p) {
