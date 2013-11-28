@@ -347,8 +347,8 @@ int main (int argc, char** argv) {
     timersub(&currTime, &prevTime, &passTime);
     int timeThisFrame = (passTime.tv_sec*1e6 + passTime.tv_usec); 
     prevTime = currTime; 
-    glClear(GL_COLOR_BUFFER_BIT); 
-    glColor3d(1.0, 0.0, 0.0); 
+    //glClear(GL_COLOR_BUFFER_BIT); 
+    //glColor3d(1.0, 0.0, 0.0); 
     drawTiles();
     drawFactories(); 
     drawRailroads();
@@ -392,5 +392,9 @@ int main (int argc, char** argv) {
   }
 
   SDL_Quit();
+
+  for (Tile::Iter tile = Tile::start(); tile != Tile::final(); ++tile) delete (*tile);
+  for (Vertex::Iter v = Vertex::start(); v != Vertex::final(); ++v) delete (*v); 
+
   return 0;
 }

@@ -2,6 +2,7 @@
 #include "Packet.hh" 
 #include "Tile.hh" 
 #include <cmath> 
+#include <cassert> 
 
 Building::Building (point p) 
   : position(p)
@@ -209,6 +210,7 @@ void Railroad::receive (Packet* packet, WareHouse* source) {
 void Railroad::update (int elapsedTime) {
   static double speed = 0.0001; 
   vector<Packet*> removes;
+  assert(packets.size() <= capacity); 
   for (unsigned int p = 0; p < packets.size(); ++p) {
     packets[p]->tile = Tile::getClosest(packets[p]->position, packets[p]->tile);
     if (1 >= packets[p]->tile->frontDistance()) {
@@ -224,6 +226,7 @@ void Railroad::update (int elapsedTime) {
     if (distance < speed*elapsedTime) {
       packets[p]->target->receive(packets[p]);
       currentLoad--; 
+      // No delete here, we're passing the packet on. 
       packets[p] = 0; 
       continue;
     }

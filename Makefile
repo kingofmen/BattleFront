@@ -2,7 +2,7 @@
 CXX=g++ 
 LD=g++  
 
-CXXFLAGS     = -O3 
+CXXFLAGS     = -O3
 SDLLIBS = $(shell sdl2-config --libs)
 SDLFLAGS = $(shell sdl2-config --cflags)
 CXXFLAGS += $(SDLFLAGS)
