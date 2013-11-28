@@ -290,8 +290,6 @@ void createFactory (Object* fact) {
 
 int main (int argc, char* argv[]) {
   SDL_SetMainReady();  
-  std::cout << "Hello, World\n" << std::endl; 
-  
   initialise(); 
 
   vector<Factory*> factories; 
@@ -360,7 +358,8 @@ int main (int argc, char* argv[]) {
   while (!done) {
     gettimeofday(&currTime, NULL); 
     timersub(&currTime, &prevTime, &passTime);
-    int timeThisFrame = (passTime.tv_sec*1e6 + passTime.tv_usec); 
+    int timeThisFrame = (passTime.tv_sec*1e6 + passTime.tv_usec);
+    if (timeThisFrame < 18000) continue;
     prevTime = currTime; 
     glClear(GL_COLOR_BUFFER_BIT); 
     glColor3d(1.0, 0.0, 0.0); 
