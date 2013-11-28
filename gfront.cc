@@ -1,9 +1,13 @@
 #include "SDL.h"
+#ifdef WINDOWS
+#include <gl/gl.h>
+#else
 #include "gl.h"
+#include <sys/times.h>
+#endif
 #include <cassert> 
 #include <iostream> 
 #include <sys/time.h>
-#include <sys/times.h>
 #include <vector>
 #include <map> 
 

@@ -75,3 +75,7 @@ ostream& operator<< (ostream& os, const point& p) {
   os << "(" << p.x() << ", " << p.y() << ")";
   return os; 
 }
+
+#ifdef WINDOWS
+
+#endif 
