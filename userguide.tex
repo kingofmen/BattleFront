@@ -1,0 +1,60 @@
+\documentclass[12pt]{article}
+\begin{document}
+
+\section{Introduction}
+
+BattleFront is a war game, in which you command the brave and
+honourable Red Pixel Army in its glorious struggle against the
+vicious Empire of Blue. The object of the game is to capture all the
+factories of the opposing side, thereby destroying their capacity to
+resist and ending the war. 
+
+\section{Build for Victory}
+
+Your factories (and those of the hated enemy) produce reinforcements
+for the front on a regular schedule. At the start of the game, these
+reinforcements must march, on foot, to the front. This is slow, and
+on the way they lose strength to disease, frostbite, and friendly-fire
+accidents. Your task is to build railways to transport your pixels
+efficiently. Rail travel is fast and attrition-less. Further, in the
+press of war there is little time to train the officers of the RPA in
+advanced strategy; left to themselves they simply march, as rapidly as
+they can manage, to the sound of the guns. Railroads allow you to
+direct where your reinforcements go, and thus achieve local
+superiority in particular parts of the front. 
+
+\section{Game controls}
+
+Press `q' to quit, `p' to pause, `c' to toggle show-cooldown mode.
+
+Select factories and depots by clicking on them. 
+
+Control-click somewhere in your territory to order a new supply depot
+built. If a depot is selected, a railroad connecting the two will also
+be ordered. Both depots and railroads are initially incomplete;
+reinforcements must be used to build them to usefulness. 
+
+Click on a selected factory to change which outgoing railroad it sends
+its reinforcements out on. If the railroad is incomplete, the
+reinforcements will build it, section by section. 
+
+Railroads initially have one locomotive; you can order more built by
+selecting a depot at either end of the railroad, and control-clicking
+on the other end. Locomotives cost one supply packet to build. Each
+locomotive can carry one packet. 
+
+When a packet reaches a depot (or is newly built in a factory), one of
+four things will happen:
+\begin{itemize}
+\item If the depot is not complete, the packet will be used to build
+  it. 
+\item If the depot has an active outgoing railroad, and that railroad
+  has a spare locomotive, the packet will be put on the railroad. 
+\item If the depot is in accumulation mode, and has spare capacity,
+  the packet will be stored in the depot. 
+\item All else failing, the troops will be sent out to make their way
+  to the front on foot. 
+\end{itemize}
+
+
+\end{document}
