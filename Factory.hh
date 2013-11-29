@@ -54,6 +54,7 @@ private:
 };
 
 struct WareHouse : public Building, public Iterable<WareHouse> {
+  friend void initialise ();
   friend void drawRailroads(); 
 
   WareHouse (point p);
@@ -69,6 +70,7 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   
 
 private:
+  static int newBuildSize; 
   Railroad* activeRail; 
   vector<Railroad*> outgoing; 
 };

@@ -4,7 +4,8 @@
 #include <cmath> 
 #include <cassert> 
 
-double Railroad::speed = 0.0001; 
+double Railroad::speed = 0.0001;
+int WareHouse::newBuildSize = 500; 
 
 Building::Building (point p) 
   : position(p)
@@ -43,7 +44,8 @@ WareHouse::WareHouse (point p)
   , content(0)
   , activeRail(0)
 {
-  capacity = 1000; 
+  toCompletion = newBuildSize;
+  capacity = newBuildSize; 
 }
 
 bool Building::useToBuild (Packet* packet) {

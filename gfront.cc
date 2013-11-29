@@ -151,7 +151,7 @@ void initialise () {
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
   Vertex::coolDownFactor = config->safeGetFloat("cooldown", Vertex::coolDownFactor); 
   Vertex::attritionRate = config->safeGetFloat("attrition", Vertex::attritionRate);
-  
+  WareHouse::newBuildSize = config->safeGetInt("newDepotSize", WareHouse::newBuildSize); 
 }
 
 void handleKeyPress (SDL_KeyboardEvent& key) {
@@ -211,9 +211,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       }
 
       WareHouse* house = new WareHouse(click);
-      house->toCompletion = 1000;
       house->player = true;
-      house->capacity = 1000; 
 
       if (selectedWareHouse) {
 	// Build new railroad and warehouse
@@ -287,6 +285,7 @@ void createFactory (Object* fact) {
   fac->timeSinceProduction = 0; 
   fac->capacity = fact->safeGetInt("packetSize"); 
   fac->m_WareHouse.player = fac->player;
+  fac->m_WareHouse.toCompletion = 0; 
 }
 
 int main (int argc, char* argv[]) {
