@@ -62,6 +62,13 @@ bool Building::useToBuild (Packet* packet) {
   return true;
 }
 
+double WareHouse::getCompFraction () const {
+  if (0 >= toCompletion) return 1.0;
+  double ret = newBuildSize; 
+  ret = 1.0 - toCompletion / ret;
+  return ret;
+}
+
 void WareHouse::receive (Packet* packet) {
   // Four options:
   // 1. Use towards completing this building.

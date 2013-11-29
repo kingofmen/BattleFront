@@ -63,6 +63,7 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   int content; 
 
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
+  virtual double getCompFraction () const; 
   void receive (Packet* packet);
   void replaceRail (Railroad* oldRail, Railroad* newRail);
   void toggle (); 
