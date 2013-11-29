@@ -134,11 +134,11 @@ void WareHouse::toggle () {
 
 void WareHouse::update () {
   if (0.25 > tile->avgControl(player)) {
-    content = 0;
+    content /= 2;
     release = true;
     player = !player;
     activeRail = 0; 
-    toCompletion += 500; 
+    toCompletion = newBuildSize;
   }
 
   if (0 == content) return;
