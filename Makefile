@@ -10,7 +10,7 @@ endif
 
 ifneq ($(WINDOWS),)
 INCLUDES += -I"..\Desktop\ParadoxParser" -I"..\Desktop\boost_1_54_0\boost" -I"..\Desktop\boost_1_54_0" -I"C:\Program Files\Microsoft SDKs\Windows\v7.1\Include\gl" -I".\SDL2-2.0.1\include"
-LIBS += "..\Desktop\ParadoxParser\libParser.lib" -L"..\..\..\MinGW\msys\1.0\local\lib" -lmingw32 -lSDL2main -lSDL2 -mconsole -lm -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -static-libgcc
+LIBS += "..\Desktop\ParadoxParser\libParser.lib" -L"..\..\..\MinGW\msys\1.0\local\lib" -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf -mconsole -lm -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -static-libgcc
 CXXFLAGS += -DWINDOWS 
 LDFLAGS += -enable-stdcall-fixup -Wl,-enable-auto-import -Wl,-enable-runtime-pseudo-reloc -Wl,-subsystem,console 
 else

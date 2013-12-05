@@ -7,6 +7,7 @@
 #include <sys/times.h>
 #endif
 #include "SDL.h"
+#include "SDL_ttf.h"
 #include <cassert> 
 #include <iostream> 
 #include <sys/time.h>
@@ -31,8 +32,8 @@ const int gridHeight = windowHeight / tileSize;
 
 WareHouse* selectedWareHouse = 0;
 bool show_cooldown = false; 
-bool done = false;
-bool paused = false; 
+enum GameState {Running, Paused, Victory, Defeat, Quit};
+GameState currentState = Running; 
 
 void drawTiles () {
   static const double invMaxTroops = 0.2; 
@@ -143,6 +144,10 @@ void drawPackets () {
   glEnd(); 
 }
 
+void runAI () {
+  
+}
+
 void initialise () {
   Object* config = processFile("config.txt"); 
   Railroad::speed = config->safeGetFloat("packetSpeed", Railroad::speed); 
@@ -156,8 +161,11 @@ void initialise () {
 
 void handleKeyPress (SDL_KeyboardEvent& key) {
   switch (key.keysym.sym) {
-  case SDLK_p: paused = !paused; break;
-  case SDLK_q: done = true;  break;
+  case SDLK_p:
+    if (Running == currentState) currentState = Paused;
+    else if (Paused == currentState) currentState = Running; 
+    break;
+  case SDLK_q: currentState = Quit;  break;
   case SDLK_c: show_cooldown = !show_cooldown; break; 
   case SDLK_ESCAPE: selectedWareHouse = 0; break;
   default: break; 
@@ -343,6 +351,12 @@ int main (int argc, char* argv[]) {
     return 1;
   }
 
+  error = TTF_Init();
+  if (-1 == error) {
+    cout << TTF_GetError() << endl;
+    return 1; 
+  }		
+
   SDL_GLContext glcontext = SDL_GL_CreateContext(win);
   assert(glcontext); 
   glClearColor(1.0, 1.0, 1.0, 0.5); 
@@ -350,13 +364,36 @@ int main (int argc, char* argv[]) {
   glLoadIdentity();
   glOrtho(0.0f, windowWidth, windowHeight, 0.0f, 0.0f, 1.0f);
 
+  // With these three I get nice white text with transparency where there
+  // isn't text. I wish I had a model for why REPLACE works and MODULATE and the
+  // two others don't. 
+  glEnable(GL_BLEND);    
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+  TTF_Font* gFont = TTF_OpenFont("SourceSansPro-Regular.ttf", 28); 
+  if (!gFont) {
+    cout << "Failed to load font SourceSansPro-Regular.ttf: " << TTF_GetError() << endl;
+    return 1;
+  }
+
+  LTexture victory;
+  LTexture defeat; 
+  SDL_Color textColor = {255, 255, 255, 255};  
+  bool isGood = victory.loadFromRenderedText("VICTORY!", textColor, gFont);
+  isGood = isGood && defeat.loadFromRenderedText("DEFEAT!", textColor, gFont);
+  if (!isGood) {
+    cout << "Could not create texts." << endl;
+    return 1; 
+  }
+  
+  currentState = Running; 
   SDL_Event event;
   timeval prevTime;
   timeval currTime; 
   timeval passTime; 
-  gettimeofday(&prevTime, NULL); 
-  while (!done) {
+  gettimeofday(&prevTime, NULL);
+  while (Quit != currentState) {
     gettimeofday(&currTime, NULL); 
     timersub(&currTime, &prevTime, &passTime);
     int timeThisFrame = (passTime.tv_sec*1e6 + passTime.tv_usec);
@@ -367,16 +404,20 @@ int main (int argc, char* argv[]) {
     drawTiles();
     drawFactories(); 
     drawRailroads();
-    drawPackets(); 
+    drawPackets();
+    if (Victory == currentState) victory.render(470, 300);
+    else if (Defeat == currentState) defeat.render(470, 300);
+    
     SDL_GL_SwapWindow(win); 
 
-    if (!paused) {
+    if (Running == currentState) {
       Vertex::attrite(timeThisFrame); 
       Vertex::fight(timeThisFrame); 
-      Vertex::move(timeThisFrame); 
+      Vertex::move(timeThisFrame);      
 
       for (Railroad::Iter r = Railroad::start(); r != Railroad::final(); ++r) (*r)->update(timeThisFrame); 
-
+      runAI(); 
+      
       int p1f = 0;
       int p2f = 0; 
       for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
@@ -385,20 +426,18 @@ int main (int argc, char* argv[]) {
 	if ((*f)->player) p1f++; else p2f++;
       }
       for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) (*w)->update(); 
-
+      
       if (0 == p1f) {
-	std::cout << "Computer wins\n";
-	break;
+	currentState = Defeat;
       }
       if (0 == p2f) {
-	std::cout << "Player wins\n";
-	break;
+	currentState = Victory;
       }
     }
 
     while (SDL_PollEvent(&event)){
       switch (event.type) {
-      case SDL_QUIT:            done = true;                    break;
+      case SDL_QUIT:            currentState = Quit;            break;
       case SDL_KEYDOWN:         handleKeyPress(event.key);      break;
       case SDL_MOUSEBUTTONDOWN: handleMouseClick(event.button); break;
       default: break; 
