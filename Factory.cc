@@ -62,6 +62,18 @@ bool Building::useToBuild (Packet* packet) {
   return true;
 }
 
+void WareHouse::connect (WareHouse* other) {
+  if (!other) return; 
+  if (player != other->player) return;
+
+  Railroad* existing = Railroad::findConnector(this, other);
+  if (!existing) {
+    existing = new Railroad(this, other);
+    existing->player = player;
+  }
+  existing->upgrade(); 
+}
+
 double WareHouse::getCompFraction () const {
   if (0 >= toCompletion) return 1.0;
   double ret = newBuildSize; 

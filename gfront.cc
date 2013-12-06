@@ -223,11 +223,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 
       if (selectedWareHouse) {
 	// Build new railroad and warehouse
-		
-	Railroad* rail = new Railroad(selectedWareHouse, house);
-	rail->upgrade();
-	rail->player = true;
-	
+	selectedWareHouse->connect(house); 
 	selectedWareHouse = 0;
       }
 
@@ -264,12 +260,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 	}
 	else {
 	  // Build new railroad, or improve existing one
-	  Railroad* existing = Railroad::findConnector(selectedWareHouse, clickedWareHouse); 
-	  if (!existing) {
-	    existing = new Railroad(selectedWareHouse, clickedWareHouse); 
-	    existing->player = true;
-	  }
-	  existing->upgrade(); 
+	  selectedWareHouse->connect(clickedWareHouse);
 	}
       }
       else {

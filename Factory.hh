@@ -53,16 +53,27 @@ private:
   vector<Packet*> packets; 
 };
 
+class WarehouseAI {
+public:
+
+  
+private:
+
+  WareHouse* m_WareHouse; 
+};
+
 struct WareHouse : public Building, public Iterable<WareHouse> {
   friend void initialise ();
   friend void drawRailroads(); 
-
+  friend class WarehouseAI; 
+  
   WareHouse (point p);
 
   bool release; 
   int content; 
 
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
+  void connect (WareHouse* other); 
   virtual double getCompFraction () const; 
   void receive (Packet* packet);
   void replaceRail (Railroad* oldRail, Railroad* newRail);
@@ -73,7 +84,8 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
 private:
   static int newBuildSize; 
   Railroad* activeRail; 
-  vector<Railroad*> outgoing; 
+  vector<Railroad*> outgoing;
+  WarehouseAI* m_ai; 
 };
 
 struct Factory : public Building, public Iterable<Factory> {
