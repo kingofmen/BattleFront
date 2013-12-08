@@ -1,6 +1,7 @@
 #ifndef FACTORY_HH
 #define FACTORY_HH
 #include <vector>
+#include <list>
 #include "utils.hh" 
 
 using namespace std; 
@@ -55,11 +56,24 @@ private:
 
 class WarehouseAI {
 public:
+  WarehouseAI (WareHouse* w);
 
+  enum Action {Passed, Released, Held};
+
+  static void globalAI (); 
+  void notify (int size, Action act);
+  void setReinforceTarget (WareHouse* t); 
+  void update (int elapsedTime); 
+  
   
 private:
-
-  WareHouse* m_WareHouse; 
+  WareHouse* m_WareHouse;
+  WareHouse* reinforceTarget;
+  double reinforcePercentage;
+  int timeSinceLast;
+  Railroad* connection;
+  list<pair<int, Action> > packets;
+  int threatLevel; 
 };
 
 struct WareHouse : public Building, public Iterable<WareHouse> {
@@ -73,12 +87,12 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   int content; 
 
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
-  void connect (WareHouse* other); 
+  Railroad* connect (WareHouse* other); 
   virtual double getCompFraction () const; 
   void receive (Packet* packet);
   void replaceRail (Railroad* oldRail, Railroad* newRail);
   void toggle (); 
-  void update ();
+  void update (int elapsedTime);
   
 
 private:

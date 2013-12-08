@@ -31,7 +31,8 @@ const int gridWidth = windowWidth / tileSize;
 const int gridHeight = windowHeight / tileSize;
 
 WareHouse* selectedWareHouse = 0;
-bool show_cooldown = false; 
+bool show_cooldown = false;
+bool show_aidebug = false; 
 enum GameState {Running, Paused, Victory, Defeat, Quit};
 GameState currentState = Running; 
 
@@ -144,10 +145,6 @@ void drawPackets () {
   glEnd(); 
 }
 
-void runAI () {
-  
-}
-
 void initialise () {
   Object* config = processFile("config.txt"); 
   Railroad::speed = config->safeGetFloat("packetSpeed", Railroad::speed); 
@@ -166,7 +163,8 @@ void handleKeyPress (SDL_KeyboardEvent& key) {
     else if (Paused == currentState) currentState = Running; 
     break;
   case SDLK_q: currentState = Quit;  break;
-  case SDLK_c: show_cooldown = !show_cooldown; break; 
+  case SDLK_c: show_cooldown = !show_cooldown; break;
+  case SDLK_a: show_aidebug = !show_aidebug; break; 
   case SDLK_ESCAPE: selectedWareHouse = 0; break;
   default: break; 
   }
@@ -407,7 +405,7 @@ int main (int argc, char* argv[]) {
       Vertex::move(timeThisFrame);      
 
       for (Railroad::Iter r = Railroad::start(); r != Railroad::final(); ++r) (*r)->update(timeThisFrame); 
-      runAI(); 
+      WarehouseAI::globalAI(); 
       
       int p1f = 0;
       int p2f = 0; 
@@ -416,7 +414,7 @@ int main (int argc, char* argv[]) {
 	if ((*f)->tile->avgControl((*f)->player) < 0.25) (*f)->player = !(*f)->player; 
 	if ((*f)->player) p1f++; else p2f++;
       }
-      for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) (*w)->update(); 
+      for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) (*w)->update(timeThisFrame); 
       
       if (0 == p1f) {
 	currentState = Defeat;

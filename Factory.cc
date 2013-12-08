@@ -37,12 +37,25 @@ Factory::Factory (point p)
   , m_WareHouse(p)
 {}
 
+WarehouseAI::WarehouseAI (WareHouse* w)
+  : m_WareHouse(w)
+  , reinforceTarget(0)
+  , reinforcePercentage(0)
+  , timeSinceLast(0)
+  , connection(0) 
+{
+  static int numAi = 0;
+  timeSinceLast = (10000 * (numAi++)) % 50000; 
+  
+}
+
 WareHouse::WareHouse (point p) 
   : Building(p)
   , Iterable<WareHouse>(this)
   , release(true)
   , content(0)
   , activeRail(0)
+  , m_ai(new WarehouseAI(this))
 {
   toCompletion = newBuildSize;
   capacity = newBuildSize; 
@@ -62,16 +75,17 @@ bool Building::useToBuild (Packet* packet) {
   return true;
 }
 
-void WareHouse::connect (WareHouse* other) {
-  if (!other) return; 
-  if (player != other->player) return;
+Railroad* WareHouse::connect (WareHouse* other) {
+  if (!other) return 0; 
+  if (player != other->player) return 0;
 
   Railroad* existing = Railroad::findConnector(this, other);
   if (!existing) {
     existing = new Railroad(this, other);
     existing->player = player;
   }
-  existing->upgrade(); 
+  existing->upgrade();
+  return existing; 
 }
 
 double WareHouse::getCompFraction () const {
@@ -96,14 +110,17 @@ void WareHouse::receive (Packet* packet) {
   if (!useToBuild(packet)) return; 
   if ((activeRail) && (activeRail->canAccept(packet))) {
     activeRail->receive(packet, this);
+    m_ai->notify(packet->size, WarehouseAI::Passed);
     return; 
   }
 
   if ((release) || (capacity < content + packet->getSize())) {
     releaseTroops(packet->getSize());
+    m_ai->notify(packet->size, WarehouseAI::Released); 
   }
   else {
     content += packet->getSize();
+    m_ai->notify(packet->size, WarehouseAI::Held); 
   }
   delete packet; 
 }
@@ -151,7 +168,7 @@ void WareHouse::toggle () {
   }
 }
 
-void WareHouse::update () {
+void WareHouse::update (int elapsedTime) {
   if (0.25 > tile->avgControl(player)) {
     content /= 2;
     release = true;
@@ -160,6 +177,7 @@ void WareHouse::update () {
     toCompletion = newBuildSize;
   }
 
+  if (!player) m_ai->update(elapsedTime); 
   if (0 == content) return;
   if (!release) return;
   releaseTroops(content);
@@ -267,4 +285,97 @@ void Railroad::update (int elapsedTime) {
 void Railroad::upgrade () {
   capacity++; 
   locosToBuild++; 
+}
+
+void WarehouseAI::globalAI () {
+  // Search for non-player warehouse that needs reinforcement.
+
+  WareHouse* endangered = 0;
+  for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
+    if ((*w)->player) continue;
+
+    int frontDistance = (*w)->tile->frontDistance();
+    if      (frontDistance > 100) (*w)->m_ai->threatLevel = 0;
+    else if (frontDistance > 75)  (*w)->m_ai->threatLevel = 1;
+    else if (frontDistance > 50)  (*w)->m_ai->threatLevel = 2;
+    else if (frontDistance > 25)  (*w)->m_ai->threatLevel = 3;
+    else                          (*w)->m_ai->threatLevel = 4;
+
+    if (0 == (*w)->m_ai->threatLevel) continue;
+    if ((0 == endangered) || ((*w)->m_ai->threatLevel > endangered->m_ai->threatLevel)) endangered = (*w); 
+  }
+
+  if (!endangered) return; 
+
+  endangered->m_ai->setReinforceTarget(0); 
+  for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
+    if ((*w)->player) continue;
+    if ((*w) == endangered) continue;
+    if ((*w)->m_ai->threatLevel == endangered->m_ai->threatLevel) continue; 
+
+    (*w)->m_ai->setReinforceTarget(endangered);
+    (*w)->m_ai->reinforcePercentage = 0.5; 
+  }
+}
+
+
+void WarehouseAI::setReinforceTarget (WareHouse* t) {
+  if (t == reinforceTarget) return; 
+  reinforceTarget = t;
+  if ((0 == reinforceTarget) || (m_WareHouse == reinforceTarget)) {
+    m_WareHouse->activeRail = 0;
+    return; 
+  }
+
+  std::cout << "Warehouse at " << m_WareHouse->position << " reinforcing " << reinforceTarget->position << std::endl; 
+
+  connection = Railroad::findConnector(m_WareHouse, reinforceTarget);
+  if (connection) return;
+
+  // Look for WareHouse that is
+  // a) closer to target than this and
+  // b) closest to this
+
+  WareHouse* intermediate = reinforceTarget;
+  double maxDistSq = m_WareHouse->position.distanceSq(reinforceTarget->position);
+  double leastDistSq = maxDistSq; 
+  for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
+    if ((*w)->player != m_WareHouse->player) continue;
+    if ((*w) == m_WareHouse) continue;
+    if ((*w) == reinforceTarget) continue; // Save a couple of distance calcs. 
+    double curr = (*w)->position.distanceSq(reinforceTarget->position);
+    if (curr > maxDistSq) continue;
+    curr = (*w)->position.distanceSq(m_WareHouse->position);
+    if (curr > leastDistSq) continue;
+    leastDistSq = curr;
+    intermediate = (*w); 
+  }
+
+  connection = Railroad::findConnector(m_WareHouse, intermediate);
+  if (connection) return;
+  connection = m_WareHouse->connect(intermediate);
+  // That should always work, otherwise something is wrong.
+  assert(connection); 
+}
+
+void WarehouseAI::notify (int size, Action act) {
+  packets.push_back(pair<int, Action>(size, act));
+  if (packets.size() > 50) packets.pop_front(); 
+}
+
+void WarehouseAI::update (int elapsedTime) {
+  timeSinceLast += elapsedTime;
+  if (timeSinceLast < 50000) return;
+  timeSinceLast = 0;
+
+  if (!reinforceTarget) return;
+  double total = 0;
+  double reinforced = 0;
+  for (list<pair<int, Action> >::iterator p = packets.begin(); p != packets.end(); ++p) {
+    total += (*p).first;
+    if (Passed == (*p).second) reinforced += (*p).first;
+  }
+  reinforced /= total;
+  if (reinforced > reinforcePercentage) m_WareHouse->activeRail = 0;
+  else m_WareHouse->activeRail = connection;
 }
