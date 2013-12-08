@@ -186,11 +186,14 @@ void WareHouse::update (int elapsedTime) {
 
 void Factory::produce (int elapsedTime) {
   timeSinceProduction += elapsedTime;
-  if (timeSinceProduction < timeToProduce) return; 
-  timeSinceProduction -= timeToProduce; 
-  
+  if (timeSinceProduction < timeToProduce) return;
   Packet* product = new Packet();
-  product->size = capacity;
+  
+  while (timeSinceProduction > timeToProduce) {
+    timeSinceProduction -= timeToProduce; 
+    product->size += capacity;
+  }
+  
   product->position = position;
   product->player = player; 
   m_WareHouse.receive(product); 

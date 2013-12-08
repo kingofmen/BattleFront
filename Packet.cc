@@ -5,7 +5,8 @@
 vector<Packet*> Packet::allPackets; 
 
 Packet::Packet () 
-  : tile(0)
+  : size(0)
+  , tile(0)
   , target(0)
 {
   allPackets.push_back(this);
