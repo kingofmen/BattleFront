@@ -70,7 +70,7 @@ private:
   WareHouse* m_WareHouse;
   WareHouse* reinforceTarget;
   double reinforcePercentage;
-  int timeSinceLast;
+  bool statusChanged; 
   Railroad* connection;
   list<pair<int, Action> > packets;
   int threatLevel; 

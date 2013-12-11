@@ -41,13 +41,9 @@ WarehouseAI::WarehouseAI (WareHouse* w)
   : m_WareHouse(w)
   , reinforceTarget(0)
   , reinforcePercentage(0)
-  , timeSinceLast(0)
+  , statusChanged(false)
   , connection(0) 
-{
-  static int numAi = 0;
-  timeSinceLast = (10000 * (numAi++)) % 50000; 
-  
-}
+{}
 
 WareHouse::WareHouse (point p) 
   : Building(p)
@@ -330,8 +326,6 @@ void WarehouseAI::setReinforceTarget (WareHouse* t) {
     return; 
   }
 
-  std::cout << "Warehouse at " << m_WareHouse->position << " reinforcing " << reinforceTarget->position << std::endl; 
-
   connection = Railroad::findConnector(m_WareHouse, reinforceTarget);
   if (connection) return;
 
@@ -363,13 +357,13 @@ void WarehouseAI::setReinforceTarget (WareHouse* t) {
 
 void WarehouseAI::notify (int size, Action act) {
   packets.push_back(pair<int, Action>(size, act));
-  if (packets.size() > 50) packets.pop_front(); 
+  if (packets.size() > 50) packets.pop_front();
+  statusChanged = true; 
 }
 
 void WarehouseAI::update (int elapsedTime) {
-  timeSinceLast += elapsedTime;
-  if (timeSinceLast < 50000) return;
-  timeSinceLast = 0;
+  if (!statusChanged) return;
+  statusChanged = false; 
 
   if (!reinforceTarget) return;
   double total = 0;

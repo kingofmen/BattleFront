@@ -360,8 +360,14 @@ int main (int argc, char* argv[]) {
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  TTF_Font* gFont = TTF_OpenFont("SourceSansPro-Regular.ttf", 28); 
-  if (!gFont) {
+  TTF_Font* bigFont = TTF_OpenFont("SourceSansPro-Regular.ttf", 32); 
+  if (!bigFont) {
+    cout << "Failed to load font SourceSansPro-Regular.ttf: " << TTF_GetError() << endl;
+    return 1;
+  }
+
+  TTF_Font* smallFont = TTF_OpenFont("SourceSansPro-Regular.ttf", 14); 
+  if (!smallFont) {
     cout << "Failed to load font SourceSansPro-Regular.ttf: " << TTF_GetError() << endl;
     return 1;
   }
@@ -369,8 +375,8 @@ int main (int argc, char* argv[]) {
   LTexture victory;
   LTexture defeat; 
   SDL_Color textColor = {255, 255, 255, 255};  
-  bool isGood = victory.loadFromRenderedText("VICTORY!", textColor, gFont);
-  isGood = isGood && defeat.loadFromRenderedText("DEFEAT!", textColor, gFont);
+  bool isGood = victory.loadFromRenderedText("VICTORY!", textColor, bigFont);
+  isGood = isGood && defeat.loadFromRenderedText("DEFEAT!", textColor, bigFont);
   if (!isGood) {
     cout << "Could not create texts." << endl;
     return 1; 
