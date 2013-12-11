@@ -150,12 +150,12 @@ void WareHouse::replaceRail (Railroad* oldRail, Railroad* newRail) {
   if (!found) outgoing.push_back(newRail); 
 }
 
-void WareHouse::toggleHoldState () {
+void WareHouse::toggleHoldState (bool backwards) {
   switch (release) {
   default:
-  case Release:    release = Accumulate; break;
-  case Accumulate: release = Hold;       break;
-  case Hold:       release = Release;    break; 
+  case Release:    release = backwards ? Hold       : Accumulate; break;
+  case Accumulate: release = backwards ? Release    : Hold;       break;
+  case Hold:       release = backwards ? Accumulate : Release;    break; 
   }
 }
 

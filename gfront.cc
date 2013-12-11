@@ -177,7 +177,8 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   static int numkeys[1]; 
   static const Uint8* keystates = SDL_GetKeyboardState(numkeys);
   static const Uint8 KEY_DOWN = 1;
-  static const int BUILDKEY = SDL_SCANCODE_LCTRL; 
+  static const int BUILDKEY = SDL_SCANCODE_LCTRL;
+  static const int SHIFTKEY = SDL_SCANCODE_LSHIFT; 
 
   WareHouse* closest = 0;
   for (WareHouse::Iter fac = WareHouse::start(); fac != WareHouse::final(); ++fac) {
@@ -269,7 +270,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   else {
     if ((selectedWareHouse) && (clickedWareHouse == selectedWareHouse)) {
       if (SDL_BUTTON_LEFT == event.button) selectedWareHouse->toggleRail(); 
-      else selectedWareHouse->toggleHoldState();
+      else selectedWareHouse->toggleHoldState(keystates[SHIFTKEY]);
     }
     else selectedWareHouse = clickedWareHouse;
   }  

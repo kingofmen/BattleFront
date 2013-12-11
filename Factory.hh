@@ -91,7 +91,7 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   virtual double getCompFraction () const; 
   void receive (Packet* packet);
   void replaceRail (Railroad* oldRail, Railroad* newRail);
-  void toggleHoldState ();   
+  void toggleHoldState (bool backwards);   
   void toggleRail ();
   void update (int elapsedTime);
   
