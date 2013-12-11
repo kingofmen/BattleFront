@@ -48,7 +48,7 @@ WarehouseAI::WarehouseAI (WareHouse* w)
 WareHouse::WareHouse (point p) 
   : Building(p)
   , Iterable<WareHouse>(this)
-  , release(true)
+  , release(Release)
   , content(0)
   , activeRail(0)
   , m_ai(new WarehouseAI(this))
@@ -110,7 +110,7 @@ void WareHouse::receive (Packet* packet) {
     return; 
   }
 
-  if ((release) || (capacity < content + packet->getSize())) {
+  if ((Release == release) || (Hold == release) || (capacity < content + packet->getSize())) {
     releaseTroops(packet->getSize());
     m_ai->notify(packet->size, WarehouseAI::Released); 
   }
@@ -150,7 +150,16 @@ void WareHouse::replaceRail (Railroad* oldRail, Railroad* newRail) {
   if (!found) outgoing.push_back(newRail); 
 }
 
-void WareHouse::toggle () {
+void WareHouse::toggleHoldState () {
+  switch (release) {
+  default:
+  case Release:    release = Accumulate; break;
+  case Accumulate: release = Hold;       break;
+  case Hold:       release = Release;    break; 
+  }
+}
+
+void WareHouse::toggleRail () {
   if (0 == outgoing.size()) return; 
   if (!activeRail) activeRail = outgoing.front(); 
   else {
@@ -167,17 +176,17 @@ void WareHouse::toggle () {
 void WareHouse::update (int elapsedTime) {
   if (0.25 > tile->avgControl(player)) {
     content /= 2;
-    release = true;
+    release = Release;
     player = !player;
     activeRail = 0; 
     toCompletion = newBuildSize;
   }
 
   if (!player) m_ai->update(elapsedTime); 
-  if (0 == content) return;
-  if (!release) return;
-  releaseTroops(content);
-  content = 0;
+  if ((0 < content) && (Release == release)) {
+    releaseTroops(content);
+    content = 0;
+  } 
 }
 
 void Factory::produce (int elapsedTime) {

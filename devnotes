@@ -1,18 +1,9 @@
- * Capture of warehouses (check) 
- * No railroads running through enemy territory (check)
- * AI response (check) 
- * Footslogging movement change (check) 
- * Limit new warehouses? (More or less done with Ctrl-click and distance limitation) 
- * Delete warehouses (decided not to) 
  * Upgrade warehouses 
- * Expand railroad capacity (check) 
- * Build railroads without new warehouse (check)
- * Show railroad construction as length of line, not brightness (check) 
- * Show railroad capacity (check) 
- * Locomotives for capacity (check) 
- * Build warehouse on existing railroad (check) 
- * Build warehouse with connection on existing railroad (check) 
- * Attrition (check) 
  * Load railroads from file
- * Add hold mode to WareHouse
+ * Add hold mode to WareHouse (check) 
+ * More detail on locomotives
+ * Fuel
+ * Maintenance
+ * Ammunition
+ * Artillery
  

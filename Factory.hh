@@ -57,9 +57,8 @@ private:
 class WarehouseAI {
 public:
   WarehouseAI (WareHouse* w);
-
   enum Action {Passed, Released, Held};
-
+  
   static void globalAI (); 
   void notify (int size, Action act);
   void setReinforceTarget (WareHouse* t); 
@@ -83,7 +82,8 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   
   WareHouse (point p);
 
-  bool release; 
+  enum State {Accumulate, Hold, Release}; 
+  State release; 
   int content; 
 
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
@@ -91,7 +91,8 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   virtual double getCompFraction () const; 
   void receive (Packet* packet);
   void replaceRail (Railroad* oldRail, Railroad* newRail);
-  void toggle (); 
+  void toggleHoldState ();   
+  void toggleRail ();
   void update (int elapsedTime);
   
 

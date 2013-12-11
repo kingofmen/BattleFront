@@ -231,7 +231,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 	int oldLength = toSplit->getLength(); 
 	oldTerminus->replaceRail(toSplit, newRail); 
 	house->addRailroad(toSplit); 
-	house->toggle(); 
+	house->toggleRail(); 
 	int locos = toSplit->capacity;
 	newRail->capacity = (locos/2);
 	toSplit->capacity = (locos/2) + (locos%2); 
@@ -268,8 +268,8 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   }
   else {
     if ((selectedWareHouse) && (clickedWareHouse == selectedWareHouse)) {
-      if (SDL_BUTTON_LEFT == event.button) selectedWareHouse->toggle(); 
-      else selectedWareHouse->release = !(selectedWareHouse->release); 
+      if (SDL_BUTTON_LEFT == event.button) selectedWareHouse->toggleRail(); 
+      else selectedWareHouse->toggleHoldState();
     }
     else selectedWareHouse = clickedWareHouse;
   }  
