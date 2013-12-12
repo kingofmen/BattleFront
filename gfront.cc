@@ -20,6 +20,7 @@
 #include "Tile.hh" 
 #include "Packet.hh" 
 #include "Factory.hh" 
+#include "StringLibrary.hh" 
 
 using namespace std; 
 
@@ -382,7 +383,7 @@ int main (int argc, char* argv[]) {
     cout << "Could not create texts." << endl;
     return 1; 
   }
-  
+
   currentState = Running; 
   SDL_Event event;
   timeval prevTime;
