@@ -3,6 +3,9 @@ ncurses-5.9/
 SDL2-2.0.0/
 ParadoxParser-master/
 front
+*.ps1
+*.aux
+*.log
 
 # Compiled Object files
 *.slo
@@ -12,6 +15,8 @@ front
 # Compiled Dynamic libraries
 *.so
 *.dylib
+*.dll
+*.exe
 
 # Compiled Static libraries
 *.lai
