@@ -26,6 +26,12 @@ protected:
   void releaseTroops (int size, Tile* t = 0);
 };
 
+struct Locomotive {
+  int capacity;
+  double speed;
+  Packet* load; 
+};
+
 struct Railroad : public Building, public Iterable<Railroad> {
   friend void initialise ();
   
@@ -51,7 +57,8 @@ struct Railroad : public Building, public Iterable<Railroad> {
 
 private:
   static double speed; // Pixels per microsecond
-  vector<Packet*> packets; 
+  vector<Packet*> packets
+  vector<Locomotive*> locos; 
 };
 
 class WarehouseAI {
@@ -72,7 +79,8 @@ private:
   bool statusChanged; 
   Railroad* connection;
   list<pair<int, Action> > packets;
-  int threatLevel; 
+  int threatLevel;
+
 };
 
 struct WareHouse : public Building, public Iterable<WareHouse> {
@@ -100,7 +108,8 @@ private:
   static int newBuildSize; 
   Railroad* activeRail; 
   vector<Railroad*> outgoing;
-  WarehouseAI* m_ai; 
+  WarehouseAI* m_ai;
+  vector<Locomotive*> locos; 
 };
 
 struct Factory : public Building, public Iterable<Factory> {
