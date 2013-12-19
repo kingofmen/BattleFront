@@ -2,6 +2,7 @@
 #define STRING_LIBRARY_HH
 
 #include <string>
+#include <map>
 #include "SDL.h"
 #include "SDL_ttf.h"
 #include "utils.hh"
@@ -48,16 +49,19 @@ private:
   int mHeight;
 };
 
-namespace StringLibrary {
-
+class StringLibrary {
+public:
+  StringLibrary (SDL_Color tc, TTF_Font* tf);
+  
+  unsigned int renderText (string txt, int x, int y);
+  void renderText (unsigned int id, int x, int y); 
   
   
-  
-  
-  
-  
-  
-  
-}
+private:
+  SDL_Color textColour;
+  TTF_Font* textFont; 
+  map<string, unsigned int> index; 
+  vector<LTexture*> library;
+};
 
 #endif

@@ -69,9 +69,6 @@ bool LTexture::loadFromRenderedText (string textureText, SDL_Color textColor, TT
     glGenTextures(1, &mTexture);
     glBindTexture(GL_TEXTURE_2D, mTexture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);    
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, textSurface->pixels);
     glDisable(GL_TEXTURE_2D);
     
@@ -100,11 +97,6 @@ void LTexture::render (int x, int y) {
   glTexCoord2d(1.0, 0.0); glVertex2d(x + mWidth, y);
   glTexCoord2d(1.0, 1.0); glVertex2d(x + mWidth, y + mHeight);
   glTexCoord2d(0.0, 1.0); glVertex2d(x, y + mHeight);
-
-  //glVertex2i(x, y);
-  //glVertex2i(x + mWidth, y);
-  //glVertex2i(x + mWidth, y + mHeight);
-  //glVertex2i(x, y + mHeight);
   glEnd();
   glDisable(GL_TEXTURE_2D);
 }
@@ -133,3 +125,28 @@ int LTexture::getWidth () {
 int LTexture::getHeight () {
   return mHeight;
 }
+
+
+StringLibrary::StringLibrary (SDL_Color tc, TTF_Font* tf)
+  : textColour(tc)
+  , textFont(tf)
+{}
+
+unsigned int StringLibrary::renderText (string txt, int x, int y) {
+  if (index.find(txt) == index.end()) {
+    LTexture* text = new LTexture();
+    text->loadFromRenderedText(txt, textColour, textFont);
+    index[txt] = library.size();
+    library.push_back(text); 
+  }
+
+  unsigned int ret = index[txt];
+  renderText(ret, x, y);
+  return ret; 
+}
+
+void StringLibrary::renderText (unsigned int idx, int x, int y) {
+  library[idx]->render(x, y); 
+}
+
+
