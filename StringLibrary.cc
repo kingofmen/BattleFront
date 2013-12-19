@@ -130,17 +130,22 @@ int LTexture::getHeight () {
 StringLibrary::StringLibrary (SDL_Color tc, TTF_Font* tf)
   : textColour(tc)
   , textFont(tf)
-{}
+{
+  registerText("UNKNOWN STRING WANTED"); 
+}
 
-unsigned int StringLibrary::renderText (string txt, int x, int y) {
+unsigned int StringLibrary::registerText (string txt) {
   if (index.find(txt) == index.end()) {
     LTexture* text = new LTexture();
     text->loadFromRenderedText(txt, textColour, textFont);
     index[txt] = library.size();
     library.push_back(text); 
   }
+  return index[txt]; 
+}
 
-  unsigned int ret = index[txt];
+unsigned int StringLibrary::renderText (string txt, int x, int y) {
+  unsigned int ret = registerText(txt); 
   renderText(ret, x, y);
   return ret; 
 }

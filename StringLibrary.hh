@@ -55,7 +55,7 @@ public:
   
   unsigned int renderText (string txt, int x, int y);
   void renderText (unsigned int id, int x, int y); 
-  
+  unsigned int registerText (string txt); 
   
 private:
   SDL_Color textColour;

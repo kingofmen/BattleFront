@@ -374,16 +374,13 @@ int main (int argc, char* argv[]) {
     return 1;
   }
 
-  LTexture victory;
-  LTexture defeat; 
-  SDL_Color textColor = {255, 255, 255, 255};  
-  bool isGood = victory.loadFromRenderedText("VICTORY!", textColor, bigFont);
-  isGood = isGood && defeat.loadFromRenderedText("DEFEAT!", textColor, bigFont);
-  if (!isGood) {
-    cout << "Could not create texts." << endl;
-    return 1; 
-  }
+  SDL_Color textColour = {255, 255, 255, 255};  
+  StringLibrary bigLetters(textColour, bigFont);
+  StringLibrary smallLetters(textColour, smallFont);
 
+  unsigned int STR_VICTORY = bigLetters.registerText("VICTORY!");
+  unsigned int STR_DEFEAT  = bigLetters.registerText("DEFEAT!");
+  
   currentState = Running; 
   SDL_Event event;
   timeval prevTime;
@@ -402,8 +399,8 @@ int main (int argc, char* argv[]) {
     drawFactories(); 
     drawRailroads();
     drawPackets();
-    if (Victory == currentState) victory.render(470, 300);
-    else if (Defeat == currentState) defeat.render(470, 300);
+    if (Victory == currentState) bigLetters.renderText(STR_VICTORY, 470, 300);
+    else if (Defeat == currentState) bigLetters.renderText(STR_DEFEAT, 470, 300);
     
     SDL_GL_SwapWindow(win); 
 

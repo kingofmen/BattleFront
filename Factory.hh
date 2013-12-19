@@ -57,7 +57,7 @@ struct Railroad : public Building, public Iterable<Railroad> {
 
 private:
   static double speed; // Pixels per microsecond
-  vector<Packet*> packets
+  vector<Packet*> packets; 
   vector<Locomotive*> locos; 
 };
 
