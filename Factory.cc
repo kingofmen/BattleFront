@@ -286,7 +286,8 @@ void Railroad::update (int elapsedTime) {
   for (unsigned int p = 0; p < packets.size(); ++p) {
     if (packets[p]) continue;
     packets[p] = packets.back(); 
-    packets.pop_back(); 
+    packets.pop_back();
+    if (!packets[p]) --p;
   }
 }
 
