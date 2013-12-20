@@ -33,7 +33,9 @@ const int gridHeight = windowHeight / tileSize;
 
 WareHouse* selectedWareHouse = 0;
 bool show_cooldown = false;
-bool show_aidebug = false; 
+bool show_aidebug = false;
+StringLibrary* bigLetters = 0;
+StringLibrary* smallLetters = 0;
 enum GameState {Running, Paused, Victory, Defeat, Quit};
 GameState currentState = Running; 
 
@@ -72,7 +74,6 @@ void drawFactories () {
     glVertex2d((*w)->position.x() + 8.0, (*w)->position.y() - 6.7 + 1.5);
     glVertex2d((*w)->position.x() - 8.0, (*w)->position.y() - 6.7 + 1.5);
   }
-
   
   for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
     if ((*f)->player) glColor3d(0.0, 0.0, 1.0);
@@ -94,6 +95,14 @@ void drawFactories () {
     glVertex2d(selectedWareHouse->position.x() - 11, selectedWareHouse->position.y() - 11);
     glEnd();
   }
+
+  if (show_aidebug) {
+    for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
+      if ((*w)->player) continue;
+      smallLetters->renderInt((*w)->m_ai->threatLevel, (*w)->position.x(), (*w)->position.y()); 
+    }
+  }
+    
 }
 
 void drawRailroads () {
@@ -154,7 +163,13 @@ void initialise () {
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
   Vertex::coolDownFactor = config->safeGetFloat("cooldown", Vertex::coolDownFactor); 
   Vertex::attritionRate = config->safeGetFloat("attrition", Vertex::attritionRate);
-  WareHouse::newBuildSize = config->safeGetInt("newDepotSize", WareHouse::newBuildSize); 
+  WareHouse::newBuildSize = config->safeGetInt("newDepotSize", WareHouse::newBuildSize);
+
+  Object* ai = config->getNeededObject("ai");
+  WarehouseAI::defcon5 = ai->safeGetInt("defcon5", WarehouseAI::defcon5);
+  WarehouseAI::defcon4 = ai->safeGetInt("defcon4", WarehouseAI::defcon4);
+  WarehouseAI::defcon3 = ai->safeGetInt("defcon3", WarehouseAI::defcon3);
+  WarehouseAI::defcon2 = ai->safeGetInt("defcon2", WarehouseAI::defcon2);  
 }
 
 void handleKeyPress (SDL_KeyboardEvent& key) {
@@ -375,11 +390,11 @@ int main (int argc, char* argv[]) {
   }
 
   SDL_Color textColour = {255, 255, 255, 255};  
-  StringLibrary bigLetters(textColour, bigFont);
-  StringLibrary smallLetters(textColour, smallFont);
+  bigLetters   = new StringLibrary(textColour, bigFont);
+  smallLetters = new StringLibrary(textColour, smallFont);
 
-  unsigned int STR_VICTORY = bigLetters.registerText("VICTORY!");
-  unsigned int STR_DEFEAT  = bigLetters.registerText("DEFEAT!");
+  unsigned int STR_VICTORY = bigLetters->registerText("VICTORY!");
+  unsigned int STR_DEFEAT  = bigLetters->registerText("DEFEAT!");
   
   currentState = Running; 
   SDL_Event event;
@@ -399,8 +414,8 @@ int main (int argc, char* argv[]) {
     drawFactories(); 
     drawRailroads();
     drawPackets();
-    if (Victory == currentState) bigLetters.renderText(STR_VICTORY, 470, 300);
-    else if (Defeat == currentState) bigLetters.renderText(STR_DEFEAT, 470, 300);
+    if (Victory == currentState) bigLetters->renderText(STR_VICTORY, 470, 300);
+    else if (Defeat == currentState) bigLetters->renderText(STR_DEFEAT, 470, 300);
     
     SDL_GL_SwapWindow(win); 
 

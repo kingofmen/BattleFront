@@ -28,7 +28,7 @@ public:
   void free();
  
   // Renders texture at given point
-  void render (int x, int y); 
+  void render (double x, double y); 
 
   // Set color modulation
   void setColor(Uint8 red, Uint8 green, Uint8 blue);
@@ -52,10 +52,11 @@ private:
 class StringLibrary {
 public:
   StringLibrary (SDL_Color tc, TTF_Font* tf);
-  
-  unsigned int renderText (string txt, int x, int y);
-  void renderText (unsigned int id, int x, int y); 
-  unsigned int registerText (string txt); 
+
+  unsigned int renderInt (int txt, double x, double y);
+  unsigned int registerText (string txt);  
+  unsigned int renderText (string txt, double x, double y);
+  void         renderText (unsigned int id, double x, double y);
   
 private:
   SDL_Color textColour;

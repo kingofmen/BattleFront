@@ -62,6 +62,8 @@ private:
 };
 
 class WarehouseAI {
+  friend void drawFactories ();
+  friend void initialise ();  
 public:
   WarehouseAI (WareHouse* w);
   enum Action {Passed, Released, Held};
@@ -81,11 +83,16 @@ private:
   list<pair<int, Action> > packets;
   int threatLevel;
 
+  static int defcon5;
+  static int defcon4;
+  static int defcon3;
+  static int defcon2;  
 };
 
 struct WareHouse : public Building, public Iterable<WareHouse> {
   friend void initialise ();
-  friend void drawRailroads(); 
+  friend void drawRailroads();
+  friend void drawFactories ();  
   friend class WarehouseAI; 
   
   WareHouse (point p);

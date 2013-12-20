@@ -88,7 +88,7 @@ void LTexture::free () {
   mHeight = 0;
 }
 
-void LTexture::render (int x, int y) {
+void LTexture::render (double x, double y) {
   glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, mTexture);
   glColor4d(0.0, 0.0, 0.0, 0.5); 
@@ -131,7 +131,16 @@ StringLibrary::StringLibrary (SDL_Color tc, TTF_Font* tf)
   : textColour(tc)
   , textFont(tf)
 {
-  registerText("UNKNOWN STRING WANTED"); 
+  registerText("0");
+  registerText("1");
+  registerText("2");
+  registerText("3");
+  registerText("4");
+  registerText("5");
+  registerText("6"); 
+  registerText("7");
+  registerText("8");
+  registerText("9");
 }
 
 unsigned int StringLibrary::registerText (string txt) {
@@ -144,13 +153,28 @@ unsigned int StringLibrary::registerText (string txt) {
   return index[txt]; 
 }
 
-unsigned int StringLibrary::renderText (string txt, int x, int y) {
+unsigned int StringLibrary::renderInt (int txt, double x, double y) {
+  // Returns the width of the rendered number.
+  int power = 1;
+  unsigned int width = 0; 
+  while (power * 10 < txt) power *= 10;
+  while (0 < power) {
+    int digit = txt / power;
+    txt %= power;
+    power /= 10;
+    library[digit]->render(x + width, y);
+    width += library[digit]->getWidth();
+  }
+  return width; 
+}
+
+unsigned int StringLibrary::renderText (string txt, double x, double y) {
   unsigned int ret = registerText(txt); 
   renderText(ret, x, y);
   return ret; 
 }
 
-void StringLibrary::renderText (unsigned int idx, int x, int y) {
+void StringLibrary::renderText (unsigned int idx, double x, double y) {
   library[idx]->render(x, y); 
 }
 

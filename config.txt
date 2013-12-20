@@ -5,4 +5,9 @@ minimumGarrison = 1
 cooldown = 50000
 attrition = 0.01
 newDepotSize = 500 
-
+ai = {
+  defcon5 = 30
+  defcon4 = 25
+  defcon3 = 20
+  defcon2 = 10
+}

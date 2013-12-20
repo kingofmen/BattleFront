@@ -6,6 +6,11 @@
 
 double Railroad::speed = 0.0001;
 int WareHouse::newBuildSize = 500; 
+int WarehouseAI::defcon5 = 30;
+int WarehouseAI::defcon4 = 25;
+int WarehouseAI::defcon3 = 20;
+int WarehouseAI::defcon2 = 10; 
+
 
 Building::Building (point p) 
   : position(p)
@@ -304,11 +309,11 @@ void WarehouseAI::globalAI () {
     if ((*w)->player) continue;
 
     int frontDistance = (*w)->tile->frontDistance();
-    if      (frontDistance > 100) (*w)->m_ai->threatLevel = 0;
-    else if (frontDistance > 75)  (*w)->m_ai->threatLevel = 1;
-    else if (frontDistance > 50)  (*w)->m_ai->threatLevel = 2;
-    else if (frontDistance > 25)  (*w)->m_ai->threatLevel = 3;
-    else                          (*w)->m_ai->threatLevel = 4;
+    if      (frontDistance > defcon5)  (*w)->m_ai->threatLevel = 0;
+    else if (frontDistance > defcon4)  (*w)->m_ai->threatLevel = 1;
+    else if (frontDistance > defcon3)  (*w)->m_ai->threatLevel = 2;
+    else if (frontDistance > defcon2)  (*w)->m_ai->threatLevel = 3;
+    else                               (*w)->m_ai->threatLevel = 4;
 
     if (0 == (*w)->m_ai->threatLevel) continue;
     if ((0 == endangered) || ((*w)->m_ai->threatLevel > endangered->m_ai->threatLevel)) endangered = (*w); 
