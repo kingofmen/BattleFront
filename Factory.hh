@@ -26,9 +26,17 @@ protected:
   void releaseTroops (int size, Tile* t = 0);
 };
 
-struct Locomotive {
-  int capacity;
-  double speed;
+struct Locomotive : public Iterable<Locomotive> {
+  Locomotive (WareHouse* h);
+  ~Locomotive (); 
+
+  double getSpeedModifier () const {return maintenance;} 
+
+  point position;
+  Tile* tile; 
+  double maintenance;
+  WareHouse* home;
+  WareHouse* destination; 
   Packet* load; 
 };
 
@@ -42,8 +50,8 @@ struct Railroad : public Building, public Iterable<Railroad> {
   virtual double getCompFraction () const; 
   int getLength () const; 
   void receive (Packet* packet, WareHouse* source);
+  void receive (Locomotive* loco, WareHouse* source);
   void update (int elapsedTime);
-  void upgrade (); 
 
   static Railroad* findConnector (WareHouse* w1, WareHouse* w2); 
 
@@ -58,7 +66,7 @@ struct Railroad : public Building, public Iterable<Railroad> {
 private:
   static double speed; // Pixels per microsecond
   vector<Packet*> packets; 
-  vector<Locomotive*> locos; 
+  list<Locomotive*> locos; 
 };
 
 class WarehouseAI {
@@ -105,6 +113,7 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   Railroad* connect (WareHouse* other); 
   virtual double getCompFraction () const; 
   void receive (Packet* packet);
+  void receive (Locomotive* loco, Railroad* source); 
   void replaceRail (Railroad* oldRail, Railroad* newRail);
   void toggleHoldState (bool backwards);   
   void toggleRail ();
@@ -116,7 +125,7 @@ private:
   Railroad* activeRail; 
   vector<Railroad*> outgoing;
   WarehouseAI* m_ai;
-  vector<Locomotive*> locos; 
+  list<Locomotive*> locos; 
 };
 
 struct Factory : public Building, public Iterable<Factory> {
@@ -127,9 +136,11 @@ struct Factory : public Building, public Iterable<Factory> {
   int timeSinceProduction;
   WareHouse m_WareHouse; 
 
+  void orderLoco (); 
   void produce (int elapsedTime);
 
 private:
+  list<Locomotive*> construct; 
 };
 
 

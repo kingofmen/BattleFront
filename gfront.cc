@@ -142,16 +142,14 @@ void drawRailroads () {
   glEnd(); 
 }
 
-void drawPackets () {
+void drawLocomotives () {
   glBegin(GL_TRIANGLES);
-  for (Packet::Iter p = Packet::start(); p != Packet::final(); ++p) {
-    if ((*p)->player) glColor3d(0.0, 0.0, 1.0);
-    else glColor3d(1.0, 0.0, 0.0);
-
+  for (Locomotive::Iter p = Locomotive::start(); p != Locomotive::final(); ++p) {
+    glColor3d(1.0, 1.0, 1.0);
     glVertex2d((*p)->position.x() + 0.0, (*p)->position.y() - 2.9);
     glVertex2d((*p)->position.x() + 2.5, (*p)->position.y() + 2.1);
     glVertex2d((*p)->position.x() - 2.5, (*p)->position.y() + 2.1);
-  }
+  }  
   glEnd(); 
 }
 
@@ -254,7 +252,6 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 	toSplit->capacity = (locos/2) + (locos%2); 
 	toSplit->twoHouse = house; 
 	toSplit->calcEnds(); 
-	if (0 == newRail->capacity) newRail->upgrade(); 
 	
 	if (0 < toSplit->toCompletion) {
 	  int newLength = toSplit->getLength(); 
@@ -413,7 +410,7 @@ int main (int argc, char* argv[]) {
     drawTiles();
     drawFactories(); 
     drawRailroads();
-    drawPackets();
+    drawLocomotives();
     if (Victory == currentState) bigLetters->renderText(STR_VICTORY, 470, 300);
     else if (Defeat == currentState) bigLetters->renderText(STR_DEFEAT, 470, 300);
     

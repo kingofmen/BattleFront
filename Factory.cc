@@ -42,6 +42,18 @@ Factory::Factory (point p)
   , m_WareHouse(p)
 {}
 
+Locomotive::Locomotive (WareHouse* h)
+  : Iterable<Locomotive>(this)
+  , maintenance(1.0)
+  , home(h)
+  , destination(0)
+  , load(0)
+{}
+
+Locomotive::~Locomotive () {
+  if (load) delete load; 
+}
+
 WarehouseAI::WarehouseAI (WareHouse* w)
   : m_WareHouse(w)
   , reinforceTarget(0)
@@ -85,7 +97,11 @@ Railroad* WareHouse::connect (WareHouse* other) {
     existing = new Railroad(this, other);
     existing->player = player;
   }
-  existing->upgrade();
+  for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
+    if (this != &(*f)->m_WareHouse) continue;
+    (*f)->orderLoco(); 
+    break;
+  }
   return existing; 
 }
 
@@ -94,6 +110,21 @@ double WareHouse::getCompFraction () const {
   double ret = newBuildSize; 
   ret = 1.0 - toCompletion / ret;
   return ret;
+}
+
+void WareHouse::receive (Locomotive* loco, Railroad* source) {
+  loco->position = position;
+  loco->tile = tile; 
+  if (loco->load) {
+    receive(loco->load);
+    loco->load = 0;
+  }
+  if (loco->home == this) locos.push_back(loco);
+  else if (source) source->receive(loco, this);
+  else {
+    loco->home = this;
+    locos.push_back(loco);
+  }
 }
 
 void WareHouse::receive (Packet* packet) {
@@ -108,12 +139,22 @@ void WareHouse::receive (Packet* packet) {
     return; 
   }
 
-  if (!useToBuild(packet)) return; 
+  if (!useToBuild(packet)) return;
+  /*
   if ((activeRail) && (activeRail->canAccept(packet))) {
     activeRail->receive(packet, this);
     m_ai->notify(packet->size, WarehouseAI::Passed);
     return; 
   }
+  */
+  if ((activeRail) && (0 < locos.size())) {
+    Locomotive* loco = locos.front();
+    locos.pop_front();
+    loco->load = packet;
+    activeRail->receive(loco, this);
+    m_ai->notify(packet->size, WarehouseAI::Passed);
+    return; 
+  }  
 
   if ((Release == release) || (Hold == release) || (capacity < content + packet->getSize())) {
     releaseTroops(packet->getSize());
@@ -194,9 +235,25 @@ void WareHouse::update (int elapsedTime) {
   } 
 }
 
+void Factory::orderLoco () {
+  construct.push_back(new Locomotive(&m_WareHouse));
+}
+
 void Factory::produce (int elapsedTime) {
+  while (construct.size()) {
+    construct.front()->maintenance += elapsedTime;
+    if (construct.front()->maintenance >= 1e6) {
+      elapsedTime = construct.front()->maintenance - 1e6;
+      construct.front()->maintenance = 1;
+      m_WareHouse.receive(construct.front(), 0);
+      construct.pop_front(); 
+    }
+    if (0 >= elapsedTime) return;    
+  }
+  
   timeSinceProduction += elapsedTime;
   if (timeSinceProduction < timeToProduce) return;
+  
   Packet* product = new Packet();
   
   while (timeSinceProduction > timeToProduce) {
@@ -249,6 +306,19 @@ Railroad* Railroad::findConnector (WareHouse* w1, WareHouse* w2) {
   return 0; 
 }
 
+void Railroad::receive (Locomotive* loco, WareHouse* source) {
+  if (0 < toCompletion) {
+    if (loco->load) receive(loco->load, source);
+    loco->load = 0;
+    source->receive(loco, this);
+    return; 
+  }
+  
+  locos.push_back(loco);
+  if (source == oneHouse) loco->destination = twoHouse;
+  else loco->destination = oneHouse;
+}
+
 void Railroad::receive (Packet* packet, WareHouse* source) {
   if (!useToBuild(packet)) return; 
   if (0 < locosToBuild) {
@@ -262,43 +332,30 @@ void Railroad::receive (Packet* packet, WareHouse* source) {
 }
 
 void Railroad::update (int elapsedTime) {
-  vector<Packet*> removes;
-  assert(packets.size() <= capacity); 
-  for (unsigned int p = 0; p < packets.size(); ++p) {
-    packets[p]->tile = Tile::getClosest(packets[p]->position, packets[p]->tile);
-    if (1 >= packets[p]->tile->frontDistance()) {
-      currentLoad--; 
-      releaseTroops(packets[p]->size, packets[p]->tile); 
-      delete packets[p];
-      packets[p] = 0;
-      continue; 
+  for (list<Locomotive*>::iterator loc = locos.begin(); loc != locos.end(); ++loc) {
+    (*loc)->tile = Tile::getClosest((*loc)->position, (*loc)->tile);
+    if (1 >= (*loc)->tile->frontDistance()) {
+      if ((*loc)->load) {
+	releaseTroops((*loc)->load->size, (*loc)->tile); 
+	delete (*loc)->load;
+	(*loc)->load = 0;
+      }
+      (*loc)->destination = (*loc)->home; 
     }
 
-    point direction = (packets[p]->target->position - packets[p]->position);
+    point direction = ((*loc)->destination->position - (*loc)->position);
     double distance = direction.length();
-    if (distance < speed*elapsedTime) {
-      packets[p]->target->receive(packets[p]);
-      currentLoad--; 
-      // No delete here, we're passing the packet on. 
-      packets[p] = 0; 
+    double covered = speed*elapsedTime*(*loc)->getSpeedModifier();
+    if (distance < covered) {
+      (*loc)->destination->receive((*loc), this);
+      loc = locos.erase(loc);
+      --loc; 
       continue;
     }
     direction.normalise(); 
-    direction *= (speed*elapsedTime);
-    packets[p]->position += direction;
+    direction *= covered; 
+    (*loc)->position += direction;
   }
-
-  for (unsigned int p = 0; p < packets.size(); ++p) {
-    if (packets[p]) continue;
-    packets[p] = packets.back(); 
-    packets.pop_back();
-    if (!packets[p]) --p;
-  }
-}
-
-void Railroad::upgrade () {
-  capacity++; 
-  locosToBuild++; 
 }
 
 void WarehouseAI::globalAI () {
