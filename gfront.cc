@@ -206,6 +206,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 
   if (KEY_DOWN == keystates[BUILDKEY]) {
     if (!clickedWareHouse) {
+      // C-click on 'wilderness': Build new WareHouse. 
       if (1600 > click.distanceSq(closest->position)) return; // No warehouse building this close to others 
 
       // Check for enemy control
@@ -235,7 +236,6 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       house->player = true;
 
       if (selectedWareHouse) {
-	// Build new railroad and warehouse
 	selectedWareHouse->connect(house); 
 	selectedWareHouse = 0;
       }
@@ -266,25 +266,58 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       }
     }
     else {
+      // C-click on existing WareHouse. 
       if (selectedWareHouse) {
+	// With prior selection of click target: New Locomotive.
 	if (clickedWareHouse == selectedWareHouse) {
-	  // Capacity upgrade
+	  for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
+	    if (clickedWareHouse != &(*f)->m_WareHouse) continue;
+	    (*f)->orderLoco(); 
+	    break;
+	  }
 	}
 	else {
-	  // Build new railroad, or improve existing one
+	  // With prior selection of different WareHouse: New railroad.
 	  selectedWareHouse->connect(clickedWareHouse);
 	}
       }
       else {
-	// No interpretation of this.
+	// No interpretation of C-click on existing WareHouse without prior selection. 
       }
     }
   }
-  else {
-    if ((selectedWareHouse) && (clickedWareHouse == selectedWareHouse)) {
-      if (SDL_BUTTON_LEFT == event.button) selectedWareHouse->toggleRail(); 
-      else selectedWareHouse->toggleHoldState(keystates[SHIFTKEY]);
+  else if (KEY_DOWN == keystates[SHIFTKEY]) {
+    if (!clickedWareHouse) return; // No interpretation of 'wilderness' shift-click.
+    if ((selectedWareHouse) && (selectedWareHouse != clickedWareHouse)) {
+      // Shift-click on different WareHouse: Transfer locomotive if possible.
+      selectedWareHouse->sendLoco(clickedWareHouse);
+      return;
     }
+    if (SDL_BUTTON_LEFT == event.button) {
+      // Shift-left-click: Upgrade
+    }
+    else {
+      // Shift-right-click: Toggle hold state backwards. 
+      selectedWareHouse->toggleHoldState(true);
+    }
+  }
+  else {
+    if (!clickedWareHouse) {
+      // Click in wilderness - deselect. 
+      selectedWareHouse = 0;
+      return;
+    }
+    if (selectedWareHouse == clickedWareHouse) {
+      if (SDL_BUTTON_LEFT == event.button) {
+	// Left-click on selected warehouse: Toggle outgoing railroad. 
+	selectedWareHouse->toggleRail();
+      }
+      else {
+	// Right-click on selected: Toggle hold state forwards. 
+	selectedWareHouse->toggleHoldState(false);
+      }
+    }
+    // Left-click on new WareHouse: Select it. 
     else selectedWareHouse = clickedWareHouse;
   }  
 }

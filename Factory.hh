@@ -19,6 +19,7 @@ struct Building {
   int toCompletion; 
   Tile* tile; 
 
+  bool complete () const {return (0 == toCompletion);} 
   virtual double getCompFraction () const {return 1.0 - 0.001*toCompletion;} 
 
 protected:
@@ -115,6 +116,7 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   void receive (Packet* packet);
   void receive (Locomotive* loco, Railroad* source); 
   void replaceRail (Railroad* oldRail, Railroad* newRail);
+  void sendLoco (WareHouse* other); 
   void toggleHoldState (bool backwards);   
   void toggleRail ();
   void update (int elapsedTime);

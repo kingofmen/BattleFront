@@ -97,11 +97,6 @@ Railroad* WareHouse::connect (WareHouse* other) {
     existing = new Railroad(this, other);
     existing->player = player;
   }
-  for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
-    if (this != &(*f)->m_WareHouse) continue;
-    (*f)->orderLoco(); 
-    break;
-  }
   return existing; 
 }
 
@@ -165,6 +160,19 @@ void WareHouse::receive (Packet* packet) {
     m_ai->notify(packet->size, WarehouseAI::Held); 
   }
   delete packet; 
+}
+
+void WareHouse::sendLoco (WareHouse* other) {
+  if (other == this) return;
+  if (!other) return;
+  if (0 == locos.size()) return; 
+  Railroad* connection = Railroad::findConnector(this, other);
+  if (!connection) return;
+  if (!connection->complete()) return; 
+  Locomotive* loco = locos.front();
+  locos.pop_front();
+  loco->home = other;
+  connection->receive(loco, this); 
 }
 
 void Building::releaseTroops (int size, Tile* t) {
