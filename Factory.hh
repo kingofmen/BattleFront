@@ -47,10 +47,8 @@ struct Railroad : public Building, public Iterable<Railroad> {
   Railroad (WareHouse* w1, WareHouse* w2); 
 
   void calcEnds (); 
-  bool canAccept (Packet* packet);
   virtual double getCompFraction () const; 
   int getLength () const; 
-  void receive (Packet* packet, WareHouse* source);
   void receive (Locomotive* loco, WareHouse* source);
   void update (int elapsedTime);
 
@@ -61,12 +59,9 @@ struct Railroad : public Building, public Iterable<Railroad> {
   point ortho; 
   WareHouse* oneHouse;
   WareHouse* twoHouse; 
-  int currentLoad; 
-  int locosToBuild; 
 
 private:
   static double speed; // Pixels per microsecond
-  vector<Packet*> packets; 
   list<Locomotive*> locos; 
 };
 

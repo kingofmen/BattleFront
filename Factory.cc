@@ -27,8 +27,6 @@ Railroad::Railroad (WareHouse* w1, WareHouse* w2)
   , twoEnd(w2->position)
   , oneHouse(w1)
   , twoHouse(w2)
-  , currentLoad(0)
-  , locosToBuild(0)
 {
   calcEnds(); 
   w1->addRailroad(this);
@@ -135,13 +133,6 @@ void WareHouse::receive (Packet* packet) {
   }
 
   if (!useToBuild(packet)) return;
-  /*
-  if ((activeRail) && (activeRail->canAccept(packet))) {
-    activeRail->receive(packet, this);
-    m_ai->notify(packet->size, WarehouseAI::Passed);
-    return; 
-  }
-  */
   if ((activeRail) && (0 < locos.size())) {
     Locomotive* loco = locos.front();
     locos.pop_front();
@@ -287,12 +278,6 @@ void Railroad::calcEnds () {
   
 }
 
-bool Railroad::canAccept (Packet* packet) {
-  if (capacity > currentLoad) return true;
-  if (0 < locosToBuild) return true;
-  return false; 
-}
-
 double Railroad::getCompFraction () const {
   if (0 >= toCompletion) return 1.0;
   double ret = getLength();
@@ -315,10 +300,9 @@ Railroad* Railroad::findConnector (WareHouse* w1, WareHouse* w2) {
 }
 
 void Railroad::receive (Locomotive* loco, WareHouse* source) {
-  if (0 < toCompletion) {
-    if (loco->load) receive(loco->load, source);
+  if ((0 < toCompletion) && (loco->load) && (!useToBuild(loco->load))) {
     loco->load = 0;
-    source->receive(loco, this);
+    source->receive(loco, this); 
     return; 
   }
   
@@ -327,17 +311,6 @@ void Railroad::receive (Locomotive* loco, WareHouse* source) {
   else loco->destination = oneHouse;
 }
 
-void Railroad::receive (Packet* packet, WareHouse* source) {
-  if (!useToBuild(packet)) return; 
-  if (0 < locosToBuild) {
-    locosToBuild--;
-    delete packet; 
-    return; 
-  }
-  packet->target = (source == oneHouse ? twoHouse : oneHouse); 
-  packets.push_back(packet); 
-  currentLoad++; 
-}
 
 void Railroad::update (int elapsedTime) {
   for (list<Locomotive*>::iterator loc = locos.begin(); loc != locos.end(); ++loc) {
