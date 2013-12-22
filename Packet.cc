@@ -5,8 +5,7 @@
 vector<Packet*> Packet::allPackets; 
 
 Packet::Packet () 
-  : size(0)
-  , tile(0)
+  : tile(0)
   , target(0)
 {
   allPackets.push_back(this);
@@ -21,6 +20,3 @@ Packet::~Packet () {
   allPackets.pop_back(); 
 }
 
-bool Packet::update (int elapsedTime) {
-  return false; 
-}

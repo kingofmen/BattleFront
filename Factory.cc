@@ -75,12 +75,12 @@ WareHouse::WareHouse (point p)
 bool Building::useToBuild (Packet* packet) {
   // Return true if the packet survives. 
   if (0 <= toCompletion) {
-    if (toCompletion > packet->size) {
-      toCompletion -= packet->size;
+    if (toCompletion > packet->getSize()) {
+      toCompletion -= packet->getSize();
       delete packet;
       return false;
     }
-    packet->size -= toCompletion;
+    packet->add(Supplies::Manpower,  -toCompletion);
     toCompletion = 0; 
   }
   return true;
@@ -138,17 +138,17 @@ void WareHouse::receive (Packet* packet) {
     locos.pop_front();
     loco->load = packet;
     activeRail->receive(loco, this);
-    m_ai->notify(packet->size, WarehouseAI::Passed);
+    m_ai->notify(packet->getSize(), WarehouseAI::Passed);
     return; 
   }  
 
   if ((Release == release) || (Hold == release) || (capacity < content + packet->getSize())) {
     releaseTroops(packet->getSize());
-    m_ai->notify(packet->size, WarehouseAI::Released); 
+    m_ai->notify(packet->getSize(), WarehouseAI::Released); 
   }
   else {
     content += packet->getSize();
-    m_ai->notify(packet->size, WarehouseAI::Held); 
+    m_ai->notify(packet->getSize(), WarehouseAI::Held); 
   }
   delete packet; 
 }
@@ -257,7 +257,7 @@ void Factory::produce (int elapsedTime) {
   
   while (timeSinceProduction > timeToProduce) {
     timeSinceProduction -= timeToProduce; 
-    product->size += capacity;
+    (*product) += production; 
   }
   
   product->position = position;
@@ -317,7 +317,7 @@ void Railroad::update (int elapsedTime) {
     (*loc)->tile = Tile::getClosest((*loc)->position, (*loc)->tile);
     if (1 >= (*loc)->tile->frontDistance()) {
       if ((*loc)->load) {
-	releaseTroops((*loc)->load->size, (*loc)->tile); 
+	releaseTroops((*loc)->load->getSize(), (*loc)->tile); 
 	delete (*loc)->load;
 	(*loc)->load = 0;
       }

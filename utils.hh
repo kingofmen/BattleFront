@@ -5,6 +5,9 @@
 #include <vector> 
 #include <iostream>
 #include <sys/time.h>
+#include <algorithm>
+#include <functional> 
+#include <numeric> 
 
 using namespace std;
 
@@ -21,6 +24,22 @@ inline void timersub (const timeval* tvp, const timeval* uvp, timeval* vvp) {
 #else
 #include "gl.h" 
 #endif 
+
+
+class Supplies {
+public:
+  enum Product {Manpower = 0, Fuel, Materiel, NumProducts};
+  Supplies ();
+
+  void add (Product p, int amount) {content[p] += amount;}
+  void clear ();
+  int getSize () const {return accumulate(content.begin(), content.end(), 0);} 
+  Supplies& operator+= (const Supplies& other) {transform(content.begin(), content.end(), other.content.begin(), content.begin(), plus<int>()); return *this;}
+  
+private:
+  vector<int> content; 
+};
+
 
 struct point : public boost::tuple<double, double> {
   point ();

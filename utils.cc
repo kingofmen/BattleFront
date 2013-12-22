@@ -76,3 +76,11 @@ ostream& operator<< (ostream& os, const point& p) {
   return os; 
 }
 
+Supplies::Supplies ()
+  : content(NumProducts)
+{}
+
+void Supplies::clear () {for (int i = 0; i < NumProducts; ++i) {content[i] = 0;}}
+
+
+

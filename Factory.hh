@@ -137,6 +137,7 @@ struct Factory : public Building, public Iterable<Factory> {
   void produce (int elapsedTime);
 
 private:
+  Supplies production; 
   list<Locomotive*> construct; 
 };
 
