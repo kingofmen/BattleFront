@@ -315,7 +315,9 @@ void createFactory (Object* fact) {
   fac->player = (fact->safeGetString("human", "no") == "yes");
   fac->timeToProduce = fact->safeGetInt("timeToProduce"); 
   fac->timeSinceProduction = 0; 
-  fac->production.add(Supplies::Manpower, fact->safeGetInt("packetSize")); 
+  fac->production.add(Packet::Manpower, fact->safeGetInt("manpower"));
+  fac->production.add(Packet::Gasoline, fact->safeGetInt("gasoline"));
+  fac->production.add(Packet::Materiel, fact->safeGetInt("materiel"));   
   fac->m_WareHouse.player = fac->player;
   fac->m_WareHouse.toCompletion = 0; 
 }

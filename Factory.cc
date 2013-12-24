@@ -1,5 +1,4 @@
 #include "Factory.hh"
-#include "Packet.hh" 
 #include "Tile.hh" 
 #include <cmath> 
 #include <cassert> 
@@ -11,6 +10,8 @@ int WarehouseAI::defcon4 = 25;
 int WarehouseAI::defcon3 = 20;
 int WarehouseAI::defcon2 = 10; 
 
+Packet Factory::locomotiveCost(1000, 0, 0);
+Packet Factory::regimentalCost(50, 0, 0);
 
 Building::Building (point p) 
   : position(p)
@@ -38,6 +39,7 @@ Factory::Factory (point p)
   : Building(p)
   , Iterable<Factory>(this)
   , m_WareHouse(p)
+  , queuedLocos(0) 
 {}
 
 Locomotive::Locomotive (WareHouse* h)
@@ -80,7 +82,7 @@ bool Building::useToBuild (Packet* packet) {
       delete packet;
       return false;
     }
-    packet->add(Supplies::Manpower,  -toCompletion);
+    packet->add(Packet::Manpower, -toCompletion);
     toCompletion = 0; 
   }
   return true;
@@ -235,34 +237,35 @@ void WareHouse::update (int elapsedTime) {
 }
 
 void Factory::orderLoco () {
-  construct.push_back(new Locomotive(&m_WareHouse));
+  queuedLocos++; 
 }
 
 void Factory::produce (int elapsedTime) {
-  while (construct.size()) {
-    construct.front()->maintenance += elapsedTime;
-    if (construct.front()->maintenance >= 1e6) {
-      elapsedTime = construct.front()->maintenance - 1e6;
-      construct.front()->maintenance = 1;
-      m_WareHouse.receive(construct.front(), 0);
-      construct.pop_front(); 
-    }
-    if (0 >= elapsedTime) return;    
-  }
-  
   timeSinceProduction += elapsedTime;
   if (timeSinceProduction < timeToProduce) return;
   
-  Packet* product = new Packet();
-  
   while (timeSinceProduction > timeToProduce) {
     timeSinceProduction -= timeToProduce; 
-    (*product) += production; 
+    produced += production; 
   }
   
-  product->position = position;
-  product->player = player; 
-  m_WareHouse.receive(product); 
+  while (0 < queuedLocos) {
+    if (produced < locomotiveCost) return;
+    produced -= locomotiveCost;
+    Locomotive* loco = new Locomotive(&m_WareHouse);
+    m_WareHouse.receive(loco, 0);
+    queuedLocos--;
+  }
+
+  while (produced >= regimentalCost) {
+    Packet* product = new Packet();
+    (*product) += regimentalCost;
+    produced -= regimentalCost; 
+    
+    product->position = position;
+    product->player = player; 
+    m_WareHouse.receive(product);
+  }
 }
 
 void Railroad::calcEnds () {

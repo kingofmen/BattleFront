@@ -2,10 +2,10 @@
 #define FACTORY_HH
 #include <vector>
 #include <list>
-#include "utils.hh" 
+#include "utils.hh"
+#include "Packet.hh" 
 
 using namespace std; 
-class Packet;
 class Tile; 
 class Object;
 struct WareHouse;
@@ -137,8 +137,12 @@ struct Factory : public Building, public Iterable<Factory> {
   void produce (int elapsedTime);
 
 private:
-  Supplies production; 
-  list<Locomotive*> construct; 
+  Packet production;
+  Packet produced; 
+  int queuedLocos; 
+
+  static Packet locomotiveCost;
+  static Packet regimentalCost;
 };
 
 
