@@ -14,13 +14,12 @@
 #include <vector>
 #include <map> 
 
-#include "Parser.hh"
-
 #include "utils.hh" 
 #include "Tile.hh" 
 #include "Packet.hh" 
 #include "Factory.hh" 
-#include "StringLibrary.hh" 
+#include "StringLibrary.hh"
+#include "StaticInitialiser.hh" 
 
 using namespace std; 
 
@@ -139,23 +138,6 @@ void drawLocomotives () {
     glVertex2d((*p)->position.x() - 2.5, (*p)->position.y() + 2.1);
   }  
   glEnd(); 
-}
-
-void initialise () {
-  Object* config = processFile("config.txt"); 
-  Railroad::speed = config->safeGetFloat("packetSpeed", Railroad::speed); 
-  Vertex::troopMoveRate = config->safeGetFloat("troopMoveRate", Vertex::troopMoveRate);
-  Vertex::fightRate = config->safeGetFloat("fightRate", Vertex::fightRate); 
-  Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
-  Vertex::coolDownFactor = config->safeGetFloat("cooldown", Vertex::coolDownFactor); 
-  Vertex::attritionRate = config->safeGetFloat("attrition", Vertex::attritionRate);
-  WareHouse::newBuildSize = config->safeGetInt("newDepotSize", WareHouse::newBuildSize);
-
-  Object* ai = config->getNeededObject("ai");
-  WarehouseAI::defcon5 = ai->safeGetInt("defcon5", WarehouseAI::defcon5);
-  WarehouseAI::defcon4 = ai->safeGetInt("defcon4", WarehouseAI::defcon4);
-  WarehouseAI::defcon3 = ai->safeGetInt("defcon3", WarehouseAI::defcon3);
-  WarehouseAI::defcon2 = ai->safeGetInt("defcon2", WarehouseAI::defcon2);  
 }
 
 void handleKeyPress (SDL_KeyboardEvent& key) {
@@ -310,23 +292,9 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   }  
 }
 
-void createFactory (Object* fact) {
-  Factory* fac = new Factory(point(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos")));
-  fac->player = (fact->safeGetString("human", "no") == "yes");
-  fac->timeToProduce = fact->safeGetInt("timeToProduce"); 
-  fac->timeSinceProduction = 0; 
-  fac->production.add(Packet::Manpower, fact->safeGetInt("manpower"));
-  fac->production.add(Packet::Gasoline, fact->safeGetInt("gasoline"));
-  fac->production.add(Packet::Materiel, fact->safeGetInt("materiel"));   
-  fac->m_WareHouse.player = fac->player;
-  fac->m_WareHouse.toCompletion = 0; 
-}
-
 int main (int argc, char* argv[]) {
   SDL_SetMainReady();  
-  initialise(); 
-
-  vector<Factory*> factories; 
+  StaticInitialiser::initialise(); 
 
   Vertex** grid[gridWidth+1];
   for (int i = 0; i <= gridWidth; ++i) grid[i] = new Vertex*[gridHeight+1];
@@ -357,12 +325,7 @@ int main (int argc, char* argv[]) {
     }
   }
 
-  
-  Object* scenario = processFile("scenario.txt");
-  objvec facts = scenario->getValue("factory"); 
-  for (objiter fact = facts.begin(); fact != facts.end(); ++fact) {
-    createFactory(*fact); 
-  }
+  StaticInitialiser::loadSave("scenario.txt"); 
 
   // Do not use INIT_EVERYTHING because that includes haptic, and gives me trouble on Windows. 
   int error = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS); 

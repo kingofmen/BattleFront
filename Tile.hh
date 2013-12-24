@@ -5,7 +5,7 @@
 #include <vector> 
 
 struct Vertex : public Iterable<Vertex> {
-  friend void initialise (); 
+  friend class StaticInitialiser; 
   friend void drawTiles (); 
   friend class Tile; 
   enum Direction {North = 0, East, South, West, NumDirections}; 

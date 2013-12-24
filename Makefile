@@ -25,7 +25,7 @@ endif
 	$(CXX) $(INCLUDES) $(CXXFLAGS) -c $< -o $@ 
 
 # NB, under Windows the sdl-config output must *follow* the input files or the SDL stuff will be 'undefined'. 
-front:	gfront.o utils.o Packet.o Factory.o Tile.o StringLibrary.o OpenGL32.Lib 
+front:	gfront.o utils.o Packet.o Factory.o Tile.o StringLibrary.o StaticInitialiser.o OpenGL32.Lib 
 	$(LD) $^ -o $@ $(LDFLAGS) $(LIBS) 
 
 

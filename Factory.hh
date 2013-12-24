@@ -42,7 +42,7 @@ struct Locomotive : public Iterable<Locomotive> {
 };
 
 struct Railroad : public Building, public Iterable<Railroad> {
-  friend void initialise ();
+  friend class StaticInitialiser;
   
   Railroad (WareHouse* w1, WareHouse* w2); 
 
@@ -67,7 +67,7 @@ private:
 
 class WarehouseAI {
   friend void drawFactories ();
-  friend void initialise ();  
+  friend class StaticInitialiser;  
 public:
   WarehouseAI (WareHouse* w);
   enum Action {Passed, Released, Held};
@@ -94,7 +94,7 @@ private:
 };
 
 struct WareHouse : public Building, public Iterable<WareHouse> {
-  friend void initialise ();
+  friend class StaticInitialiser;
   friend void drawRailroads();
   friend void drawFactories ();  
   friend class WarehouseAI; 
@@ -126,7 +126,7 @@ private:
 };
 
 struct Factory : public Building, public Iterable<Factory> {
-  friend void createFactory (Object*); 
+  friend class StaticInitialiser; 
 
   Factory (point p);
   int timeToProduce; // All times in microseconds
