@@ -27,7 +27,10 @@ void StaticInitialiser::initialise () {
   WarehouseAI::defcon5 = ai->safeGetInt("defcon5", WarehouseAI::defcon5);
   WarehouseAI::defcon4 = ai->safeGetInt("defcon4", WarehouseAI::defcon4);
   WarehouseAI::defcon3 = ai->safeGetInt("defcon3", WarehouseAI::defcon3);
-  WarehouseAI::defcon2 = ai->safeGetInt("defcon2", WarehouseAI::defcon2);  
+  WarehouseAI::defcon2 = ai->safeGetInt("defcon2", WarehouseAI::defcon2);
+
+  setPacket(config->safeGetObject("locomotiveCost"), &(Factory::locomotiveCost));
+  setPacket(config->safeGetObject("regimentalCost"), &(Factory::regimentalCost));
 }
 
 void StaticInitialiser::loadSave (string fname) {

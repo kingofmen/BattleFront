@@ -11,3 +11,14 @@ ai = {
   defcon3 = 20
   defcon2 = 10
 }
+
+locomotiveCost = {
+  manpower = 5
+  gasoline = 10
+  materiel = 50
+}
+
+regimentalCost = {
+  manpower = 50
+}
+

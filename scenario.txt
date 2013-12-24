@@ -3,7 +3,9 @@ factory = {
   xpos = 300
   ypos = 300
   timeToProduce = 1000000
-  manpower = 50
+  production = {
+    manpower = 50
+  }
 }
 
 factory = {
@@ -11,7 +13,9 @@ factory = {
   xpos = 300
   ypos = 500
   timeToProduce = 1000000
-  manpower = 50
+  production = {
+    manpower = 50
+  }
 }
 
 factory = {
@@ -19,7 +23,9 @@ factory = {
   xpos = 300
   ypos = 100
   timeToProduce = 1000000
-  manpower = 50
+  production = {
+    manpower = 50
+  }
 }
 
 factory = {
@@ -27,7 +33,9 @@ factory = {
   xpos = 900
   ypos = 300
   timeToProduce = 500000
-  manpower = 25
+  production = {
+    manpower = 25
+  }
 }
 
 factory = {
@@ -35,7 +43,9 @@ factory = {
   xpos = 800
   ypos = 100
   timeToProduce = 500000
-  manpower = 25
+  production = {
+    manpower = 25
+  }
 }
 
 factory = {
@@ -43,6 +53,8 @@ factory = {
   xpos = 900
   ypos = 500
   timeToProduce = 500000
-  manpower = 25
+  production = {
+    manpower = 25
+  }
 }
 
