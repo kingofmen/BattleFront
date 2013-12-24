@@ -2,21 +2,38 @@
 #include "Tile.hh" 
 #include <cmath> 
 
-vector<Packet*> Packet::allPackets; 
-
 Packet::Packet () 
   : tile(0)
-  , target(0)
-{
-  allPackets.push_back(this);
+  , content(NumProducts)
+{}
+
+Packet::~Packet () {}
+
+void Packet::clear () {for (int i = Manpower; i < NumProducts; ++i) {content[i] = 0;}}
+
+bool operator> (const Packet& one, const Packet& two) {
+  if (one.getManpower() <= two.getManpower()) return false;
+  if (one.getGasoline() <= two.getGasoline()) return false;
+  if (one.getMateriel() <= two.getMateriel()) return false;
+  return true;
+}
+bool operator< (const Packet& one, const Packet& two) {
+  if (one.getManpower() >= two.getManpower()) return false;
+  if (one.getGasoline() >= two.getGasoline()) return false;
+  if (one.getMateriel() >= two.getMateriel()) return false;
+  return true;
+}
+bool operator>= (const Packet& one, const Packet& two) {
+  if (one.getManpower() < two.getManpower()) return false;
+  if (one.getGasoline() < two.getGasoline()) return false;
+  if (one.getMateriel() < two.getMateriel()) return false;
+  return true;
+}
+bool operator<= (const Packet& one, const Packet& two) {
+  if (one.getManpower() > two.getManpower()) return false;
+  if (one.getGasoline() > two.getGasoline()) return false;
+  if (one.getMateriel() > two.getMateriel()) return false;
+  return true;
 }
 
-Packet::~Packet () {
-  for (unsigned int i = 0; i < allPackets.size(); ++i) {
-    if (allPackets[i] != this) continue;
-    allPackets[i] = allPackets.back();
-    break;
-  }
-  allPackets.pop_back(); 
-}
 
