@@ -31,6 +31,8 @@ void StaticInitialiser::initialise () {
 
   setPacket(config->safeGetObject("locomotiveCost"), &(Factory::locomotiveCost));
   setPacket(config->safeGetObject("regimentalCost"), &(Factory::regimentalCost));
+  Locomotive::decayRate = (-1.0) / config->safeGetFloat("locoDecayDistance", Locomotive::decayRate);
+  Locomotive::repairRate = (-1.0) / config->safeGetFloat("locoRepairTime", Locomotive::repairRate);
 }
 
 void StaticInitialiser::loadSave (string fname) {
@@ -43,6 +45,7 @@ void StaticInitialiser::loadSave (string fname) {
 
 void StaticInitialiser::setPacket (Object* object, Packet* packet) {
   if (!object) return;
+  packet->clear(); 
   packet->add(Packet::Manpower, object->safeGetInt("manpower"));
   packet->add(Packet::Gasoline, object->safeGetInt("gasoline"));
   packet->add(Packet::Materiel, object->safeGetInt("materiel"));   

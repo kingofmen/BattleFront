@@ -5,6 +5,8 @@ minimumGarrison = 1
 cooldown = 50000
 attrition = 0.01
 newDepotSize = 500 
+locoDecayDistance = 1000
+locoRepairTime = 1000000 
 ai = {
   defcon5 = 30
   defcon4 = 25
@@ -13,9 +15,7 @@ ai = {
 }
 
 locomotiveCost = {
-  manpower = 5
-  gasoline = 10
-  materiel = 50
+  manpower = 250
 }
 
 regimentalCost = {

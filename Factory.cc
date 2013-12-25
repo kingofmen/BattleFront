@@ -3,6 +3,8 @@
 #include <cmath> 
 #include <cassert> 
 
+double Locomotive::decayRate = 1000; // Initially in pixels, will be inverted by StaticInitialiser
+double Locomotive::repairRate = 1e6; // Initially in microseconds. 
 double Railroad::speed = 0.0001;
 int WareHouse::newBuildSize = 500; 
 int WarehouseAI::defcon5 = 30;
@@ -86,6 +88,16 @@ bool Building::useToBuild (Packet* packet) {
     toCompletion = 0; 
   }
   return true;
+}
+
+void Locomotive::repair (int elapsedTime) {
+  double diff = 1.0 - maintenance;
+  diff *= exp(elapsedTime * repairRate); 
+  maintenance = 1.0 - diff; 
+}
+
+void Locomotive::traverse (double distance) {
+  maintenance *= exp(distance*decayRate);
 }
 
 Railroad* WareHouse::connect (WareHouse* other) {
@@ -233,7 +245,11 @@ void WareHouse::update (int elapsedTime) {
   if ((0 < content) && (Release == release)) {
     releaseTroops(content);
     content = 0;
-  } 
+  }
+
+  for (list<Locomotive*>::iterator loc = locos.begin(); loc != locos.end(); ++loc) {
+    (*loc)->repair(elapsedTime); 
+  }
 }
 
 void Factory::orderLoco () {
@@ -250,7 +266,7 @@ void Factory::produce (int elapsedTime) {
   }
   
   while (0 < queuedLocos) {
-    if (produced < locomotiveCost) return;
+    if (produced < locomotiveCost) return; 
     produced -= locomotiveCost;
     Locomotive* loco = new Locomotive(&m_WareHouse);
     m_WareHouse.receive(loco, 0);
@@ -324,12 +340,14 @@ void Railroad::update (int elapsedTime) {
 	delete (*loc)->load;
 	(*loc)->load = 0;
       }
-      (*loc)->destination = (*loc)->home; 
+      (*loc)->destination = (*loc)->home;
+      (*loc)->maintenance *= 0.90; 
     }
 
     point direction = ((*loc)->destination->position - (*loc)->position);
     double distance = direction.length();
     double covered = speed*elapsedTime*(*loc)->getSpeedModifier();
+    (*loc)->traverse(min(distance, covered));
     if (distance < covered) {
       (*loc)->destination->receive((*loc), this);
       loc = locos.erase(loc);

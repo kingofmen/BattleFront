@@ -28,17 +28,24 @@ protected:
 };
 
 struct Locomotive : public Iterable<Locomotive> {
+  friend class StaticInitialiser;
+  
   Locomotive (WareHouse* h);
   ~Locomotive (); 
 
-  double getSpeedModifier () const {return maintenance;} 
-
+  double getSpeedModifier () const {return maintenance;}
+  void repair (int elapsedTime); 
+  void traverse (double distance); 
+  
   point position;
   Tile* tile; 
   double maintenance;
   WareHouse* home;
   WareHouse* destination; 
-  Packet* load; 
+  Packet* load;
+private:
+  static double decayRate;  // Inverse, negative pixels.
+  static double repairRate; // Inverse, negative microseconds.
 };
 
 struct Railroad : public Building, public Iterable<Railroad> {
