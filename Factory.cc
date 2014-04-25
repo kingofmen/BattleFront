@@ -1,5 +1,6 @@
 #include "Factory.hh"
-#include "Tile.hh" 
+#include "Tile.hh"
+#include "Graphics.hh" 
 #include <cmath> 
 #include <cassert> 
 
@@ -42,7 +43,9 @@ Factory::Factory (point p)
   , Iterable<Factory>(this)
   , m_WareHouse(p)
   , queuedLocos(0) 
-{}
+{
+  FactoryGraphics* myGraphics = new FactoryGraphics(this);
+}
 
 Locomotive::Locomotive (WareHouse* h)
   : Iterable<Locomotive>(this)
@@ -72,6 +75,7 @@ WareHouse::WareHouse (point p)
   , activeRail(0)
   , m_ai(new WarehouseAI(this))
 {
+  WareHouseGraphics* myGraphics = new WareHouseGraphics(this);
   toCompletion = newBuildSize;
   capacity = newBuildSize; 
 }
@@ -449,4 +453,46 @@ void WarehouseAI::update (int elapsedTime) {
   reinforced /= total;
   if (reinforced > reinforcePercentage) m_WareHouse->activeRail = 0;
   else m_WareHouse->activeRail = connection;
+}
+
+RawMaterialHolder::RawMaterialHolder () {
+  stockpile = new double[NumRawMaterials];
+  for (int i = 0; i < NumRawMaterials; ++i) stockpile[i] = 0;
+}
+
+RawMaterialHolder::~RawMaterialHolder () {
+  delete[] stockpile; 
+}
+
+RawMaterialProducer::RawMaterialProducer (WareHouse* w)
+  : Building(w->position)
+  , Iterable<RawMaterialProducer>(this)
+  , maxProduction()
+  , curProduction()
+  , m_WareHouse(w)
+{
+  assert(w); 
+}
+
+RawMaterialProducer::~RawMaterialProducer () {}
+
+void RawMaterialProducer::produce (int elapsedTime) {
+  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
+    m_WareHouse->add(i, maxProduction.get(i) * curProduction.get(i) * elapsedTime); 
+  }
+}
+  
+string RawMaterialHolder::getName (RawMaterials r) {
+  switch (r) {
+  case Men:   return "men";
+  case Steel: return "steel";
+  case Fuel:  return "fuel";
+  case Ammo:  return "ammo";
+  default:    return "unknown"; 
+  }
+}
+
+string RawMaterialHolder::getName (unsigned int r) {
+  if (r >= NumRawMaterials) return "unknown";
+  return getName((RawMaterials) r); 
 }

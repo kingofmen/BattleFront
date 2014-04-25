@@ -6,6 +6,20 @@ factory = {
   production = {
     manpower = 50
   }
+  rawMaterials = {
+    maxProduction = {
+      men = 1
+      fuel = 1
+      steel = 1
+      ammo = 1
+    }
+    currProduction = {
+      men = 0.9
+      fuel = 0
+      steel = 0
+      ammo = 0.1
+    }
+  }
 }
 
 factory = {
@@ -16,6 +30,20 @@ factory = {
   production = {
     manpower = 50
   }
+  rawMaterials = {
+    maxProduction = {
+      men = 1
+      fuel = 1
+      steel = 1
+      ammo = 1
+    }
+    currProduction = {
+      men = 0.9
+      fuel = 0
+      steel = 0
+      ammo = 0.1
+    }
+  }
 }
 
 factory = {
@@ -25,6 +53,20 @@ factory = {
   timeToProduce = 1000000
   production = {
     manpower = 50
+  }
+  rawMaterials = {
+    maxProduction = {
+      men = 1
+      fuel = 1
+      steel = 1
+      ammo = 1
+    }
+    currProduction = {
+      men = 0.9
+      fuel = 0
+      steel = 0
+      ammo = 0.1
+    }
   }
 }
 
@@ -36,6 +78,20 @@ factory = {
   production = {
     manpower = 25
   }
+  rawMaterials = {
+    maxProduction = {
+      men = 1
+      fuel = 1
+      steel = 1
+      ammo = 1
+    }
+    currProduction = {
+      men = 0.9
+      fuel = 0
+      steel = 0
+      ammo = 0.1
+    }
+  }
 }
 
 factory = {
@@ -46,6 +102,20 @@ factory = {
   production = {
     manpower = 25
   }
+  rawMaterials = {
+    maxProduction = {
+      men = 1
+      fuel = 1
+      steel = 1
+      ammo = 1
+    }
+    currProduction = {
+      men = 0.9
+      fuel = 0
+      steel = 0
+      ammo = 0.1
+    }
+  }
 }
 
 factory = {
@@ -55,6 +125,20 @@ factory = {
   timeToProduce = 500000
   production = {
     manpower = 25
+  }
+  rawMaterials = {
+    maxProduction = {
+      men = 1
+      fuel = 1
+      steel = 1
+      ammo = 1
+    }
+    currProduction = {
+      men = 0.9
+      fuel = 0
+      steel = 0
+      ammo = 0.1
+    }
   }
 }
 

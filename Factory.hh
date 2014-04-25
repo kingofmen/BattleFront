@@ -10,6 +10,26 @@ class Tile;
 class Object;
 struct WareHouse;
 
+enum RawMaterials {Men = 0, Steel, Fuel, Ammo, NumRawMaterials}; 
+
+struct RawMaterialHolder {
+  RawMaterialHolder ();
+  ~RawMaterialHolder ();
+
+  void add (unsigned int idx, double amt) {stockpile[idx] += amt;}
+  double get (unsigned int idx) {return stockpile[idx];}
+  double getMen   () {return stockpile[Men];}
+  double getSteel () {return stockpile[Steel];}
+  double getFuel  () {return stockpile[Fuel];}
+  double getAmmo  () {return stockpile[Ammo];}
+
+  static string getName (RawMaterials r);
+  static string getName (unsigned int r); 
+  
+private:
+  double* stockpile; 
+};
+
 struct Building {
   Building (point p);
 
@@ -102,6 +122,7 @@ private:
 
 struct WareHouse : public Building, public Iterable<WareHouse> {
   friend class StaticInitialiser;
+  friend class WareHouseGraphics; 
   friend void drawRailroads();
   friend void drawFactories ();  
   friend class WarehouseAI; 
@@ -122,19 +143,36 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   void toggleHoldState (bool backwards);   
   void toggleRail ();
   void update (int elapsedTime);
-  
+  void add (unsigned int idx, double amount) {stockpile.add(idx, amount);}
 
 private:
   static int newBuildSize; 
   Railroad* activeRail; 
   vector<Railroad*> outgoing;
   WarehouseAI* m_ai;
-  list<Locomotive*> locos; 
+  list<Locomotive*> locos;
+  RawMaterialHolder stockpile; 
+};
+
+class RawMaterialProducer : public Building, public Iterable<RawMaterialProducer> {
+  friend class StaticInitialiser; 
+public:
+  RawMaterialProducer (WareHouse* w);
+  ~RawMaterialProducer ();
+
+  void produce (int elapsedTime); // In microseconds
+  
+private:
+  RawMaterialHolder maxProduction; // Units per microsecond
+  RawMaterialHolder curProduction; // Fractions of maxProduction
+
+  WareHouse* m_WareHouse; 
 };
 
 struct Factory : public Building, public Iterable<Factory> {
   friend class StaticInitialiser; 
-
+  friend class FactoryGraphics; 
+  
   Factory (point p);
   int timeToProduce; // All times in microseconds
   int timeSinceProduction;

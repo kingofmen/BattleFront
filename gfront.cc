@@ -17,7 +17,8 @@
 #include "utils.hh" 
 #include "Tile.hh" 
 #include "Packet.hh" 
-#include "Factory.hh" 
+#include "Factory.hh"
+#include "Graphics.hh" 
 #include "StringLibrary.hh"
 #include "StaticInitialiser.hh" 
 
@@ -65,22 +66,12 @@ void drawTiles () {
 void drawFactories () {
   glBegin(GL_TRIANGLES);
 
-  for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
-    if ((*w)->player) glColor3d(0.0, 0.0, 0.2 + 0.8*(*w)->getCompFraction());
-    else glColor3d(0.2 + 0.8*(*w)->getCompFraction(), 0.0, 0.0);
-    
-    glVertex2d((*w)->position.x() + 0.0, (*w)->position.y() + 9.3 + 1.5);
-    glVertex2d((*w)->position.x() + 8.0, (*w)->position.y() - 6.7 + 1.5);
-    glVertex2d((*w)->position.x() - 8.0, (*w)->position.y() - 6.7 + 1.5);
+  for (WareHouseGraphics::Iter w = WareHouseGraphics::start(); w != WareHouseGraphics::final(); ++w) {
+    (*w)->draw(); 
   }
   
-  for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
-    if ((*f)->player) glColor3d(0.0, 0.0, 1.0);
-    else glColor3d(1.0, 0.0, 0.0);
-
-    glVertex2d((*f)->position.x() + 0.0, (*f)->position.y() - 9.3 - 1.5);
-    glVertex2d((*f)->position.x() - 8.0, (*f)->position.y() + 6.7 - 1.5);
-    glVertex2d((*f)->position.x() + 8.0, (*f)->position.y() + 6.7 - 1.5);
+  for (FactoryGraphics::Iter f = FactoryGraphics::start(); f != FactoryGraphics::final(); ++f) {
+    (*f)->draw(); 
   }
   glEnd(); 
 
@@ -407,6 +398,7 @@ int main (int argc, char* argv[]) {
       Vertex::fight(timeThisFrame); 
       Vertex::move(timeThisFrame);      
 
+      for (RawMaterialProducer::Iter r = RawMaterialProducer::start(); r != RawMaterialProducer::final(); ++r) (*r)->produce(timeThisFrame); 
       for (Railroad::Iter r = Railroad::start(); r != Railroad::final(); ++r) (*r)->update(timeThisFrame); 
       WarehouseAI::globalAI(); 
       

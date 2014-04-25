@@ -10,7 +10,44 @@ void StaticInitialiser::createFactory (Object* fact) {
   fac->timeSinceProduction = 0;
   setPacket(fact->safeGetObject("production"), &(fac->production));
   fac->m_WareHouse.player = fac->player;
-  fac->m_WareHouse.toCompletion = 0; 
+  fac->m_WareHouse.toCompletion = 0;
+  Object* rawMaterials = fact->safeGetObject("rawMaterials");
+  if (rawMaterials) {
+    RawMaterialProducer* rmp = new RawMaterialProducer(&(fac->m_WareHouse));
+    createRawMaterialProducer(rawMaterials, rmp); 
+  }
+}
+
+void StaticInitialiser::createRawMaterialProducer (Object* def, RawMaterialProducer* rmp) {
+  Object* maxProd = def->getNeededObject("maxProduction");
+  Object* curProd = def->getNeededObject("currProduction");
+
+  double totalCurr = 0;
+  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
+    double prod = maxProd->safeGetFloat(RawMaterialHolder::getName(i));
+    if (prod < 0.001) prod = 0.001;
+    rmp->maxProduction.add(i, prod);
+    prod = curProd->safeGetFloat(RawMaterialHolder::getName(i));
+    if (prod < 0) prod = 0;
+    rmp->curProduction.add(i, prod);
+    totalCurr += prod;
+  }
+
+  // Enforce nonzero current production
+  if (totalCurr < 1e-6) {
+    rmp->curProduction.add(0, 1 - totalCurr);
+    totalCurr = 1;
+  }
+
+  // Normalise current production to 1
+  totalCurr = 1.0 / totalCurr;
+  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
+    double curr = rmp->curProduction.get(i);
+    rmp->curProduction.add(i, -curr);
+    curr *= totalCurr;
+    rmp->curProduction.add(i, curr);
+  }
+  
 }
 
 void StaticInitialiser::initialise () {
