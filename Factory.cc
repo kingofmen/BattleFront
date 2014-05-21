@@ -13,8 +13,7 @@ int WarehouseAI::defcon4 = 25;
 int WarehouseAI::defcon3 = 20;
 int WarehouseAI::defcon2 = 10; 
 
-Packet Factory::locomotiveCost(1000, 0, 0);
-Packet Factory::regimentalCost(50, 0, 0);
+vector<RawMaterialHolder> Factory::s_ProductionCosts(NumUnitTypes);
 
 Building::Building (point p) 
   : position(p)
@@ -42,9 +41,10 @@ Factory::Factory (point p)
   : Building(p)
   , Iterable<Factory>(this)
   , m_WareHouse(p)
-  , queuedLocos(0) 
+  , unableToProgress(0)
 {
   FactoryGraphics* myGraphics = new FactoryGraphics(this);
+  setCurrentProduction();
 }
 
 Locomotive::Locomotive (WareHouse* h)
@@ -69,6 +69,7 @@ WarehouseAI::WarehouseAI (WareHouse* w)
 
 WareHouse::WareHouse (point p) 
   : Building(p)
+  , RawMaterialHolder()
   , Iterable<WareHouse>(this)
   , release(Release)
   , content(0)
@@ -257,34 +258,72 @@ void WareHouse::update (int elapsedTime) {
 }
 
 void Factory::orderLoco () {
-  queuedLocos++; 
+  m_ProductionQueue.push(Train); 
 }
 
-void Factory::produce (int elapsedTime) {
-  timeSinceProduction += elapsedTime;
-  if (timeSinceProduction < timeToProduce) return;
-  
-  while (timeSinceProduction > timeToProduce) {
-    timeSinceProduction -= timeToProduce; 
-    produced += production; 
-  }
-  
-  while (0 < queuedLocos) {
-    if (produced < locomotiveCost) return; 
-    produced -= locomotiveCost;
-    Locomotive* loco = new Locomotive(&m_WareHouse);
-    m_WareHouse.receive(loco, 0);
-    queuedLocos--;
-  }
+void Factory::setCurrentProduction () {
+  if (m_ProductionQueue.empty()) m_ProductionQueue.push(Regiment);
+  m_NormalisedCost = s_ProductionCosts[m_ProductionQueue.front()];
+  m_NormalisedCost.normalise();   
+}
 
-  while (produced >= regimentalCost) {
+void Factory::doneProducing () {
+  UnitType newUnitType = m_ProductionQueue.front();
+  m_ProductionQueue.pop(); 
+  setCurrentProduction();
+  if (m_ProductionQueue.front() == newUnitType) m_UsedSoFar -= s_ProductionCosts[newUnitType];
+  else m_UsedSoFar.clear();
+
+  switch (newUnitType) {
+  case Regiment:
+    {
     Packet* product = new Packet();
-    (*product) += regimentalCost;
-    produced -= regimentalCost; 
-    
+    product->add(Packet::Manpower, 50);
     product->position = position;
     product->player = player; 
     m_WareHouse.receive(product);
+    }
+    break;
+  case Train:
+    m_WareHouse.receive(new Locomotive(&m_WareHouse), 0);
+    break;
+  default:
+    break; 
+  }
+}
+
+
+string Factory::getName (UnitType ut) {
+  switch (ut) {
+  case Regiment: return "regiment";
+  case Train:    return "locomotive";
+  case Battery:  return "artillery";
+  case Squadron: return "aircraft"; 
+  default:
+  case NumUnitTypes: return "unknown";
+  }
+}
+
+string Factory::getName (unsigned int ut) {
+  if (ut >= NumUnitTypes) return "unknown";
+  return getName((UnitType) ut); 
+}
+
+void Factory::produce (int elapsedTime) {
+  double currThroughput = elapsedTime * m_Throughput;
+  RawMaterialHolder wantToUse = m_NormalisedCost * currThroughput;
+
+  if (m_WareHouse >= wantToUse) {
+    unableToProgress = 0;
+    m_UsedSoFar += wantToUse;
+    m_WareHouse -= wantToUse;
+    if (m_UsedSoFar >= s_ProductionCosts[m_ProductionQueue.front()]) doneProducing();
+  }
+  else {
+    unableToProgress += elapsedTime;
+    if (unableToProgress < 1000000) return;
+    m_ProductionQueue.pop();
+    setCurrentProduction(); 
   }
 }
 
@@ -455,13 +494,22 @@ void WarehouseAI::update (int elapsedTime) {
   else m_WareHouse->activeRail = connection;
 }
 
-RawMaterialHolder::RawMaterialHolder () {
-  stockpile = new double[NumRawMaterials];
-  for (int i = 0; i < NumRawMaterials; ++i) stockpile[i] = 0;
+RawMaterialHolder::RawMaterialHolder () :
+  stockpile(NumRawMaterials)
+{
+  clear();
+}
+
+RawMaterialHolder::RawMaterialHolder (double m, double s, double f, double a) :
+  stockpile(NumRawMaterials)
+{
+  stockpile[Men] = m;
+  stockpile[Steel] = s;
+  stockpile[Fuel] = f;
+  stockpile[Ammo] = a; 
 }
 
 RawMaterialHolder::~RawMaterialHolder () {
-  delete[] stockpile; 
 }
 
 RawMaterialProducer::RawMaterialProducer (WareHouse* w)
@@ -481,7 +529,13 @@ void RawMaterialProducer::produce (int elapsedTime) {
     m_WareHouse->add(i, maxProduction.get(i) * curProduction.get(i) * elapsedTime); 
   }
 }
-  
+
+void RawMaterialHolder::clear () {
+  for (unsigned int i = Men; i < NumRawMaterials; ++i) {
+    stockpile[i] = 0;
+  }
+}
+
 string RawMaterialHolder::getName (RawMaterials r) {
   switch (r) {
   case Men:   return "men";
@@ -496,3 +550,35 @@ string RawMaterialHolder::getName (unsigned int r) {
   if (r >= NumRawMaterials) return "unknown";
   return getName((RawMaterials) r); 
 }
+
+void RawMaterialHolder::normalise () {
+  double total = 0;
+  for (unsigned int i = Men; i < NumRawMaterials; ++i) total += stockpile[i];
+  if (0 == total) return;
+  total = 1.0 / total;
+  (*this) *= total; 
+}
+
+bool operator>= (const RawMaterialHolder& one, const RawMaterialHolder& two) {
+  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
+    if (one.get(i) < two.get(i)) return false;
+  }
+  return true;
+}
+
+RawMaterialHolder operator* (const RawMaterialHolder& rmh, double num) {
+  RawMaterialHolder ret;
+  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
+    ret.add(i, rmh.get(i) * num);
+  }
+  return ret; 
+}
+
+RawMaterialHolder operator* (double num, const RawMaterialHolder& rmh) {
+  RawMaterialHolder ret;
+  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
+    ret.add(i, rmh.get(i) * num);
+  }
+  return ret; 
+}
+

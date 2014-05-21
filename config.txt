@@ -15,10 +15,19 @@ ai = {
 }
 
 locomotiveCost = {
-  manpower = 250
+  men = 250
+  steel = 50
 }
 
-regimentalCost = {
-  manpower = 50
+regimentCost = {
+  men = 50 
+}
+
+artilleryCost = {
+
+}
+
+aircraftCost = {
+
 }
 

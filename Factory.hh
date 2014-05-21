@@ -2,6 +2,7 @@
 #define FACTORY_HH
 #include <vector>
 #include <list>
+#include <queue>
 #include "utils.hh"
 #include "Packet.hh" 
 
@@ -10,25 +11,37 @@ class Tile;
 class Object;
 struct WareHouse;
 
-enum RawMaterials {Men = 0, Steel, Fuel, Ammo, NumRawMaterials}; 
+enum RawMaterials {Men = 0, Steel, Fuel, Ammo, NumRawMaterials};
+enum UnitType {Regiment = 0, Train, Battery, Squadron, NumUnitTypes}; 
 
 struct RawMaterialHolder {
   RawMaterialHolder ();
+  RawMaterialHolder (double m, double s, double f, double a);
   ~RawMaterialHolder ();
 
   void add (unsigned int idx, double amt) {stockpile[idx] += amt;}
-  double get (unsigned int idx) {return stockpile[idx];}
-  double getMen   () {return stockpile[Men];}
-  double getSteel () {return stockpile[Steel];}
-  double getFuel  () {return stockpile[Fuel];}
-  double getAmmo  () {return stockpile[Ammo];}
+  void clear ();
+  double get (unsigned int idx) const {return stockpile[idx];}
+  double getMen   () const {return stockpile[Men];}
+  double getSteel () const {return stockpile[Steel];}
+  double getFuel  () const {return stockpile[Fuel];}
+  double getAmmo  () const {return stockpile[Ammo];}
+  void normalise  (); 
 
+  RawMaterialHolder& operator-= (const RawMaterialHolder& other) {for (int i = 0; i < NumRawMaterials; ++i) stockpile[i] -= other.stockpile[i]; return *this;}
+  RawMaterialHolder& operator+= (const RawMaterialHolder& other) {for (int i = 0; i < NumRawMaterials; ++i) stockpile[i] += other.stockpile[i]; return *this;}
+  RawMaterialHolder& operator*= (const double scale) {for (int i = 0; i < NumRawMaterials; ++i) stockpile[i] *= scale; return *this;}
+  
   static string getName (RawMaterials r);
   static string getName (unsigned int r); 
   
 private:
-  double* stockpile; 
+  vector<double> stockpile; 
 };
+
+bool operator>= (const RawMaterialHolder& one, const RawMaterialHolder& two);
+RawMaterialHolder operator* (const RawMaterialHolder& rmh, double num);
+RawMaterialHolder operator* (double num, const RawMaterialHolder& rmh);
 
 struct Building {
   Building (point p);
@@ -120,7 +133,7 @@ private:
   static int defcon2;  
 };
 
-struct WareHouse : public Building, public Iterable<WareHouse> {
+struct WareHouse : public Building, public RawMaterialHolder, public Iterable<WareHouse> {
   friend class StaticInitialiser;
   friend class WareHouseGraphics; 
   friend void drawRailroads();
@@ -143,15 +156,14 @@ struct WareHouse : public Building, public Iterable<WareHouse> {
   void toggleHoldState (bool backwards);   
   void toggleRail ();
   void update (int elapsedTime);
-  void add (unsigned int idx, double amount) {stockpile.add(idx, amount);}
-
+  //void add (unsigned int idx, double amount) {add(idx, amount);}
+  
 private:
   static int newBuildSize; 
   Railroad* activeRail; 
   vector<Railroad*> outgoing;
   WarehouseAI* m_ai;
   list<Locomotive*> locos;
-  RawMaterialHolder stockpile; 
 };
 
 class RawMaterialProducer : public Building, public Iterable<RawMaterialProducer> {
@@ -174,20 +186,24 @@ struct Factory : public Building, public Iterable<Factory> {
   friend class FactoryGraphics; 
   
   Factory (point p);
-  int timeToProduce; // All times in microseconds
-  int timeSinceProduction;
   WareHouse m_WareHouse; 
 
   void orderLoco (); 
   void produce (int elapsedTime);
 
-private:
-  Packet production;
-  Packet produced; 
-  int queuedLocos; 
+  static string getName (UnitType ut);
+  static string getName (unsigned int ut); 
 
-  static Packet locomotiveCost;
-  static Packet regimentalCost;
+private:
+  void doneProducing (); 
+  void setCurrentProduction ();
+  
+  double m_Throughput; // Per microsecond
+  RawMaterialHolder m_UsedSoFar;
+  RawMaterialHolder m_NormalisedCost; 
+  int unableToProgress; 
+  queue<UnitType> m_ProductionQueue; 
+  static vector<RawMaterialHolder> s_ProductionCosts; // Costs to make one unit.
 };
 
 

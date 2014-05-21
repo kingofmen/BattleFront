@@ -6,9 +6,7 @@
 void StaticInitialiser::createFactory (Object* fact) {
   Factory* fac = new Factory(point(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos")));
   fac->player = (fact->safeGetString("human", "no") == "yes");
-  fac->timeToProduce = fact->safeGetInt("timeToProduce"); 
-  fac->timeSinceProduction = 0;
-  setPacket(fact->safeGetObject("production"), &(fac->production));
+  fac->m_Throughput = fact->safeGetFloat("throughput") * 1e-6; // Per second in the file, per microsecond internally. 
   fac->m_WareHouse.player = fac->player;
   fac->m_WareHouse.toCompletion = 0;
   Object* rawMaterials = fact->safeGetObject("rawMaterials");
@@ -25,6 +23,7 @@ void StaticInitialiser::createRawMaterialProducer (Object* def, RawMaterialProdu
   double totalCurr = 0;
   for (unsigned int i = 0; i < NumRawMaterials; ++i) {
     double prod = maxProd->safeGetFloat(RawMaterialHolder::getName(i));
+    prod *= 1e-6; // Per second in file, per microsecond internally. 
     if (prod < 0.001) prod = 0.001;
     rmp->maxProduction.add(i, prod);
     prod = curProd->safeGetFloat(RawMaterialHolder::getName(i));
@@ -40,14 +39,7 @@ void StaticInitialiser::createRawMaterialProducer (Object* def, RawMaterialProdu
   }
 
   // Normalise current production to 1
-  totalCurr = 1.0 / totalCurr;
-  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
-    double curr = rmp->curProduction.get(i);
-    rmp->curProduction.add(i, -curr);
-    curr *= totalCurr;
-    rmp->curProduction.add(i, curr);
-  }
-  
+  rmp->curProduction.normalise();  
 }
 
 void StaticInitialiser::initialise () {
@@ -66,10 +58,19 @@ void StaticInitialiser::initialise () {
   WarehouseAI::defcon3 = ai->safeGetInt("defcon3", WarehouseAI::defcon3);
   WarehouseAI::defcon2 = ai->safeGetInt("defcon2", WarehouseAI::defcon2);
 
-  setPacket(config->safeGetObject("locomotiveCost"), &(Factory::locomotiveCost));
-  setPacket(config->safeGetObject("regimentalCost"), &(Factory::regimentalCost));
   Locomotive::decayRate = (-1.0) / config->safeGetFloat("locoDecayDistance", Locomotive::decayRate);
   Locomotive::repairRate = (-1.0) / config->safeGetFloat("locoRepairTime", Locomotive::repairRate);
+
+  for (unsigned int ut = Regiment; ut < NumUnitTypes; ++ut) {
+    Factory::s_ProductionCosts[ut].clear(); 
+    string keyword = Factory::getName(ut);
+    keyword += "Cost";
+    Object* currCost = config->safeGetObject(keyword);
+    assert(currCost);
+    for (unsigned int rm = Men; rm < NumRawMaterials; ++rm) {
+      Factory::s_ProductionCosts[ut].add(rm, currCost->safeGetFloat(RawMaterialHolder::getName(rm)));
+    }
+  }
 }
 
 void StaticInitialiser::loadSave (string fname) {
