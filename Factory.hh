@@ -12,7 +12,19 @@ class Object;
 struct WareHouse;
 
 enum RawMaterials {Men = 0, Steel, Fuel, Ammo, NumRawMaterials};
-enum UnitType {Regiment = 0, Train, Battery, Squadron, NumUnitTypes}; 
+//enum UnitType {Regiment = 0, Train, Battery, Squadron, NumUnitTypes}; 
+
+class UnitType : public Enumerable<UnitType> {
+public:
+  enum {Regiment = 0, Train, Battery, Squadron, NumUnitTypes};
+  UnitType (string n, int i, bool f = false) : Enumerable<UnitType>(this, n, i, f) {} 
+  
+private:
+  static UnitType* UnitType1;
+  static UnitType* UnitType2;
+  static UnitType* UnitType3;
+  static UnitType* UnitType4;
+};
 
 struct RawMaterialHolder {
   RawMaterialHolder ();
@@ -191,9 +203,6 @@ struct Factory : public Building, public Iterable<Factory> {
   void orderLoco (); 
   void produce (int elapsedTime);
 
-  static string getName (UnitType ut);
-  static string getName (unsigned int ut); 
-
 private:
   void doneProducing (); 
   void setCurrentProduction ();
@@ -202,7 +211,7 @@ private:
   RawMaterialHolder m_UsedSoFar;
   RawMaterialHolder m_NormalisedCost; 
   int unableToProgress; 
-  queue<UnitType> m_ProductionQueue; 
+  queue<UnitType*> m_ProductionQueue; 
   static vector<RawMaterialHolder> s_ProductionCosts; // Costs to make one unit.
 };
 

@@ -61,14 +61,14 @@ void StaticInitialiser::initialise () {
   Locomotive::decayRate = (-1.0) / config->safeGetFloat("locoDecayDistance", Locomotive::decayRate);
   Locomotive::repairRate = (-1.0) / config->safeGetFloat("locoRepairTime", Locomotive::repairRate);
 
-  for (unsigned int ut = Regiment; ut < NumUnitTypes; ++ut) {
-    Factory::s_ProductionCosts[ut].clear(); 
-    string keyword = Factory::getName(ut);
+  for (UnitType::Iter ut = UnitType::start(); ut != UnitType::final(); ++ut) {
+    Factory::s_ProductionCosts[**ut].clear(); 
+    string keyword = (*ut)->getName();
     keyword += "Cost";
     Object* currCost = config->safeGetObject(keyword);
     assert(currCost);
     for (unsigned int rm = Men; rm < NumRawMaterials; ++rm) {
-      Factory::s_ProductionCosts[ut].add(rm, currCost->safeGetFloat(RawMaterialHolder::getName(rm)));
+      Factory::s_ProductionCosts[**ut].add(rm, currCost->safeGetFloat(RawMaterialHolder::getName(rm)));
     }
   }
 }

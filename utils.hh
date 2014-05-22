@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <functional> 
 #include <numeric> 
+#include <cassert>
+#include <map> 
 
 using namespace std;
 
@@ -86,11 +88,67 @@ template <class T> class Iterable {
   typedef typename vector<T*>::iterator Iter;
   static Iter start () {return allThings.begin();}
   static Iter final () {return allThings.end();}
-
+  static unsigned int totalAmount () {return allThings.size();}
+  
  private:
   static vector<T*> allThings;
 };
 
 template <class T> vector<T*> Iterable<T>::allThings; 
+
+template <class T> class Finalizable {
+public:
+  Finalizable<T> (bool final = false) {
+    assert(!s_Final);
+    s_Final = final;
+  }
+
+private:
+  static bool s_Final;
+};
+
+template<class T> bool Finalizable<T>::s_Final = false; 
+
+template<class T> class Named {
+public:
+  Named (string n, T* dat) : name(n) {assert(!nameToObjectMap[n]); nameToObjectMap[n] = dat;}
+  string getName () const {return name;}
+  static T* getByName (string n) {return nameToObjectMap[n];}
+private:
+  string name;
+  static map<string, T*> nameToObjectMap;
+};
+
+template<class T> map<string, T*> Named<T>::nameToObjectMap;
+
+template<class T> class Numbered {
+public:
+  Numbered<T> (T* dat, unsigned int i) : idx(i) {
+    if (i >= theNumbers.size()) theNumbers.resize(i+1);
+    theNumbers[i] = dat;
+  }
+
+  unsigned int getIdx () const {return idx;}
+  static T* getByIndex (unsigned int i) {return theNumbers[i];}
+  operator unsigned int() {return idx;}
+  
+private:
+  unsigned int idx; 
+  static vector<T*> theNumbers;
+};
+
+template<class T> vector<T*> Numbered<T>::theNumbers; 
+
+template<class T> class Enumerable : public Finalizable<T>, public Iterable<T>, public Named<T>, public Numbered<T> {
+public:
+  Enumerable<T> (T* dat, string n, int i, bool final = false) 
+    : Finalizable<T>(final)
+    , Iterable<T>(dat)
+    , Named<T>(n, dat)
+    , Numbered<T>(dat, i)
+  {}
+  
+private:
+};
 
 #endif 

@@ -13,7 +13,12 @@ int WarehouseAI::defcon4 = 25;
 int WarehouseAI::defcon3 = 20;
 int WarehouseAI::defcon2 = 10; 
 
-vector<RawMaterialHolder> Factory::s_ProductionCosts(NumUnitTypes);
+UnitType* UnitType::UnitType1 = new UnitType("regiment", Regiment);
+UnitType* UnitType::UnitType2 = new UnitType("locomotive", Train);
+UnitType* UnitType::UnitType3 = new UnitType("artillery", Battery);
+UnitType* UnitType::UnitType4 = new UnitType("aircraft", Squadron, true);
+
+vector<RawMaterialHolder> Factory::s_ProductionCosts(UnitType::NumUnitTypes);
 
 Building::Building (point p) 
   : position(p)
@@ -45,6 +50,7 @@ Factory::Factory (point p)
 {
   FactoryGraphics* myGraphics = new FactoryGraphics(this);
   setCurrentProduction();
+
 }
 
 Locomotive::Locomotive (WareHouse* h)
@@ -258,24 +264,24 @@ void WareHouse::update (int elapsedTime) {
 }
 
 void Factory::orderLoco () {
-  m_ProductionQueue.push(Train); 
+  m_ProductionQueue.push(UnitType::getByIndex(UnitType::Train)); 
 }
 
 void Factory::setCurrentProduction () {
-  if (m_ProductionQueue.empty()) m_ProductionQueue.push(Regiment);
-  m_NormalisedCost = s_ProductionCosts[m_ProductionQueue.front()];
+  if (m_ProductionQueue.empty()) m_ProductionQueue.push(UnitType::getByIndex(UnitType::Regiment));
+  m_NormalisedCost = s_ProductionCosts[*m_ProductionQueue.front()];
   m_NormalisedCost.normalise();   
 }
 
 void Factory::doneProducing () {
-  UnitType newUnitType = m_ProductionQueue.front();
+  UnitType* newUnitType = m_ProductionQueue.front();
   m_ProductionQueue.pop(); 
   setCurrentProduction();
-  if (m_ProductionQueue.front() == newUnitType) m_UsedSoFar -= s_ProductionCosts[newUnitType];
+  if (m_ProductionQueue.front() == newUnitType) m_UsedSoFar -= s_ProductionCosts[*newUnitType];
   else m_UsedSoFar.clear();
 
-  switch (newUnitType) {
-  case Regiment:
+  switch (*newUnitType) {
+  case UnitType::Regiment:
     {
     Packet* product = new Packet();
     product->add(Packet::Manpower, 50);
@@ -284,29 +290,12 @@ void Factory::doneProducing () {
     m_WareHouse.receive(product);
     }
     break;
-  case Train:
+  case UnitType::Train:
     m_WareHouse.receive(new Locomotive(&m_WareHouse), 0);
     break;
   default:
     break; 
   }
-}
-
-
-string Factory::getName (UnitType ut) {
-  switch (ut) {
-  case Regiment: return "regiment";
-  case Train:    return "locomotive";
-  case Battery:  return "artillery";
-  case Squadron: return "aircraft"; 
-  default:
-  case NumUnitTypes: return "unknown";
-  }
-}
-
-string Factory::getName (unsigned int ut) {
-  if (ut >= NumUnitTypes) return "unknown";
-  return getName((UnitType) ut); 
 }
 
 void Factory::produce (int elapsedTime) {
@@ -317,7 +306,7 @@ void Factory::produce (int elapsedTime) {
     unableToProgress = 0;
     m_UsedSoFar += wantToUse;
     m_WareHouse -= wantToUse;
-    if (m_UsedSoFar >= s_ProductionCosts[m_ProductionQueue.front()]) doneProducing();
+    if (m_UsedSoFar >= s_ProductionCosts[*m_ProductionQueue.front()]) doneProducing();
   }
   else {
     unableToProgress += elapsedTime;
