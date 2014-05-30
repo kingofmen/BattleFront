@@ -18,6 +18,11 @@ UnitType* UnitType::UnitType2 = new UnitType("locomotive", Train);
 UnitType* UnitType::UnitType3 = new UnitType("artillery", Battery);
 UnitType* UnitType::UnitType4 = new UnitType("aircraft", Squadron, true);
 
+RawMaterial* RawMaterial::RawMaterial1 = new RawMaterial("men", Men);
+RawMaterial* RawMaterial::RawMaterial2 = new RawMaterial("steel", Steel);
+RawMaterial* RawMaterial::RawMaterial3 = new RawMaterial("fuel", Fuel);
+RawMaterial* RawMaterial::RawMaterial4 = new RawMaterial("ammo", Ammo);
+
 vector<RawMaterialHolder> Factory::s_ProductionCosts(UnitType::NumUnitTypes);
 
 Building::Building (point p) 
@@ -484,18 +489,18 @@ void WarehouseAI::update (int elapsedTime) {
 }
 
 RawMaterialHolder::RawMaterialHolder () :
-  stockpile(NumRawMaterials)
+  stockpile(RawMaterial::NumRawMaterials)
 {
   clear();
 }
 
 RawMaterialHolder::RawMaterialHolder (double m, double s, double f, double a) :
-  stockpile(NumRawMaterials)
+  stockpile(RawMaterial::NumRawMaterials)
 {
-  stockpile[Men] = m;
-  stockpile[Steel] = s;
-  stockpile[Fuel] = f;
-  stockpile[Ammo] = a; 
+  stockpile[RawMaterial::Men] = m;
+  stockpile[RawMaterial::Steel] = s;
+  stockpile[RawMaterial::Fuel] = f;
+  stockpile[RawMaterial::Ammo] = a; 
 }
 
 RawMaterialHolder::~RawMaterialHolder () {
@@ -514,60 +519,65 @@ RawMaterialProducer::RawMaterialProducer (WareHouse* w)
 RawMaterialProducer::~RawMaterialProducer () {}
 
 void RawMaterialProducer::produce (int elapsedTime) {
-  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
-    m_WareHouse->add(i, maxProduction.get(i) * curProduction.get(i) * elapsedTime); 
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) { 
+    m_WareHouse->add(*i, maxProduction.get(*i) * curProduction.get(*i) * elapsedTime); 
   }
 }
 
 void RawMaterialHolder::clear () {
-  for (unsigned int i = Men; i < NumRawMaterials; ++i) {
-    stockpile[i] = 0;
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) { 
+    stockpile[**i] = 0;
   }
-}
-
-string RawMaterialHolder::getName (RawMaterials r) {
-  switch (r) {
-  case Men:   return "men";
-  case Steel: return "steel";
-  case Fuel:  return "fuel";
-  case Ammo:  return "ammo";
-  default:    return "unknown"; 
-  }
-}
-
-string RawMaterialHolder::getName (unsigned int r) {
-  if (r >= NumRawMaterials) return "unknown";
-  return getName((RawMaterials) r); 
 }
 
 void RawMaterialHolder::normalise () {
   double total = 0;
-  for (unsigned int i = Men; i < NumRawMaterials; ++i) total += stockpile[i];
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) total += stockpile[**i];
   if (0 == total) return;
   total = 1.0 / total;
   (*this) *= total; 
 }
 
 bool operator>= (const RawMaterialHolder& one, const RawMaterialHolder& two) {
-  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
-    if (one.get(i) < two.get(i)) return false;
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {  
+    if (one.get(*i) < two.get(*i)) return false;
   }
   return true;
 }
 
 RawMaterialHolder operator* (const RawMaterialHolder& rmh, double num) {
   RawMaterialHolder ret;
-  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
-    ret.add(i, rmh.get(i) * num);
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    ret.add(*i, rmh.get(*i) * num);
   }
   return ret; 
 }
 
 RawMaterialHolder operator* (double num, const RawMaterialHolder& rmh) {
   RawMaterialHolder ret;
-  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
-    ret.add(i, rmh.get(i) * num);
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    ret.add(*i, rmh.get(*i) * num);
   }
   return ret; 
 }
 
+RawMaterialHolder& RawMaterialHolder::operator-= (const RawMaterialHolder& other) {
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    stockpile[**i] -= other.stockpile[**i]; 
+  }
+  return *this;
+}
+
+RawMaterialHolder& RawMaterialHolder::operator+= (const RawMaterialHolder& other) {
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    stockpile[**i] += other.stockpile[**i]; 
+  }
+  return *this;
+}
+
+RawMaterialHolder& RawMaterialHolder::operator*= (const double scale) {
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    stockpile[**i] *= scale;
+  }
+  return *this;
+}

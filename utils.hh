@@ -130,7 +130,7 @@ public:
 
   unsigned int getIdx () const {return idx;}
   static T* getByIndex (unsigned int i) {return theNumbers[i];}
-  operator unsigned int() {return idx;}
+  operator unsigned int() const {return idx;}
   
 private:
   unsigned int idx; 

@@ -1,5 +1,6 @@
 #include "StaticInitialiser.hh"
 #include "Factory.hh"
+#include "Graphics.hh" 
 #include "Parser.hh"
 #include "Tile.hh" 
 
@@ -12,7 +13,8 @@ void StaticInitialiser::createFactory (Object* fact) {
   Object* rawMaterials = fact->safeGetObject("rawMaterials");
   if (rawMaterials) {
     RawMaterialProducer* rmp = new RawMaterialProducer(&(fac->m_WareHouse));
-    createRawMaterialProducer(rawMaterials, rmp); 
+    createRawMaterialProducer(rawMaterials, rmp);
+    FactoryGraphics::findGraphicsObject(fac)->m_ProducerDrawer = new ProducerGraphics(rmp);
   }
 }
 
@@ -21,14 +23,14 @@ void StaticInitialiser::createRawMaterialProducer (Object* def, RawMaterialProdu
   Object* curProd = def->getNeededObject("currProduction");
 
   double totalCurr = 0;
-  for (unsigned int i = 0; i < NumRawMaterials; ++i) {
-    double prod = maxProd->safeGetFloat(RawMaterialHolder::getName(i));
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    double prod = maxProd->safeGetFloat((*i)->getName());
     prod *= 1e-6; // Per second in file, per microsecond internally. 
     if (prod < 0.001) prod = 0.001;
-    rmp->maxProduction.add(i, prod);
-    prod = curProd->safeGetFloat(RawMaterialHolder::getName(i));
+    rmp->maxProduction.add(*i, prod);
+    prod = curProd->safeGetFloat((*i)->getName()); 
     if (prod < 0) prod = 0;
-    rmp->curProduction.add(i, prod);
+    rmp->curProduction.add(*i, prod);
     totalCurr += prod;
   }
 
@@ -67,8 +69,8 @@ void StaticInitialiser::initialise () {
     keyword += "Cost";
     Object* currCost = config->safeGetObject(keyword);
     assert(currCost);
-    for (unsigned int rm = Men; rm < NumRawMaterials; ++rm) {
-      Factory::s_ProductionCosts[**ut].add(rm, currCost->safeGetFloat(RawMaterialHolder::getName(rm)));
+    for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+      Factory::s_ProductionCosts[**ut].add(*i, currCost->safeGetFloat((*i)->getName()));
     }
   }
 }

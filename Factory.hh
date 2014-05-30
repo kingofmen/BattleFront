@@ -11,8 +11,16 @@ class Tile;
 class Object;
 struct WareHouse;
 
-enum RawMaterials {Men = 0, Steel, Fuel, Ammo, NumRawMaterials};
-//enum UnitType {Regiment = 0, Train, Battery, Squadron, NumUnitTypes}; 
+class RawMaterial : public Enumerable<RawMaterial> {
+public:
+  enum {Men = 0, Steel, Fuel, Ammo, NumRawMaterials};
+  RawMaterial (string n, int i, bool f = false) : Enumerable<RawMaterial>(this, n, i, f) {}
+private:
+  static RawMaterial* RawMaterial1;
+  static RawMaterial* RawMaterial2;
+  static RawMaterial* RawMaterial3;
+  static RawMaterial* RawMaterial4;
+};
 
 class UnitType : public Enumerable<UnitType> {
 public:
@@ -31,24 +39,22 @@ struct RawMaterialHolder {
   RawMaterialHolder (double m, double s, double f, double a);
   ~RawMaterialHolder ();
 
-  void add (unsigned int idx, double amt) {stockpile[idx] += amt;}
+  void add (RawMaterial const * const idx, double amt) {stockpile[*idx] += amt;}
   void clear ();
   double get (unsigned int idx) const {return stockpile[idx];}
-  double getMen   () const {return stockpile[Men];}
-  double getSteel () const {return stockpile[Steel];}
-  double getFuel  () const {return stockpile[Fuel];}
-  double getAmmo  () const {return stockpile[Ammo];}
+  double get (RawMaterial const * const idx) const {return stockpile[*idx];}  
+  double getMen   () const {return stockpile[RawMaterial::Men];}
+  double getSteel () const {return stockpile[RawMaterial::Steel];}
+  double getFuel  () const {return stockpile[RawMaterial::Fuel];}
+  double getAmmo  () const {return stockpile[RawMaterial::Ammo];}
   void normalise  (); 
 
-  RawMaterialHolder& operator-= (const RawMaterialHolder& other) {for (int i = 0; i < NumRawMaterials; ++i) stockpile[i] -= other.stockpile[i]; return *this;}
-  RawMaterialHolder& operator+= (const RawMaterialHolder& other) {for (int i = 0; i < NumRawMaterials; ++i) stockpile[i] += other.stockpile[i]; return *this;}
-  RawMaterialHolder& operator*= (const double scale) {for (int i = 0; i < NumRawMaterials; ++i) stockpile[i] *= scale; return *this;}
-  
-  static string getName (RawMaterials r);
-  static string getName (unsigned int r); 
-  
+  RawMaterialHolder& operator-= (const RawMaterialHolder& other);
+  RawMaterialHolder& operator+= (const RawMaterialHolder& other);
+  RawMaterialHolder& operator*= (const double scale);
+    
 private:
-  vector<double> stockpile; 
+  vector<double> stockpile;
 };
 
 bool operator>= (const RawMaterialHolder& one, const RawMaterialHolder& two);
@@ -179,7 +185,8 @@ private:
 };
 
 class RawMaterialProducer : public Building, public Iterable<RawMaterialProducer> {
-  friend class StaticInitialiser; 
+  friend class StaticInitialiser;
+  friend class ProducerGraphics; 
 public:
   RawMaterialProducer (WareHouse* w);
   ~RawMaterialProducer ();
