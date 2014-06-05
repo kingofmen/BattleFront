@@ -5,17 +5,20 @@
 #include "Tile.hh" 
 
 void StaticInitialiser::createFactory (Object* fact) {
-  Factory* fac = new Factory(point(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos")));
+  point location(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos"));
+  Factory* fac = new Factory(location);
   fac->player = (fact->safeGetString("human", "no") == "yes");
   fac->m_Throughput = fact->safeGetFloat("throughput") * 1e-6; // Per second in the file, per microsecond internally. 
   fac->m_WareHouse.player = fac->player;
   fac->m_WareHouse.toCompletion = 0;
   Object* rawMaterials = fact->safeGetObject("rawMaterials");
+  new FactoryGraphics(fac, location);
   if (rawMaterials) {
     RawMaterialProducer* rmp = new RawMaterialProducer(&(fac->m_WareHouse));
     createRawMaterialProducer(rawMaterials, rmp);
-    FactoryGraphics::findGraphicsObject(fac)->m_ProducerDrawer = new ProducerGraphics(rmp);
+    new ProducerGraphics(rmp, location);
   }
+  new WareHouseGraphics(&(fac->m_WareHouse), location); 
 }
 
 void StaticInitialiser::createRawMaterialProducer (Object* def, RawMaterialProducer* rmp) {

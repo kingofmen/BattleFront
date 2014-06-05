@@ -73,6 +73,10 @@ void drawFactories () {
   for (FactoryGraphics::Iter f = FactoryGraphics::start(); f != FactoryGraphics::final(); ++f) {
     (*f)->draw(); 
   }
+
+  for (ProducerGraphics::Iter f = ProducerGraphics::start(); f != ProducerGraphics::final(); ++f) {
+    (*f)->draw(); 
+  }
   glEnd(); 
 
   if (selectedWareHouse) {
@@ -194,6 +198,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       }
 
       WareHouse* house = new WareHouse(click);
+      new WareHouseGraphics(house, click); 
       house->player = true;
 
       if (selectedWareHouse) {

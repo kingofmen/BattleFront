@@ -1,6 +1,5 @@
 #include "Factory.hh"
 #include "Tile.hh"
-#include "Graphics.hh" 
 #include <cmath> 
 #include <cassert> 
 
@@ -53,7 +52,6 @@ Factory::Factory (point p)
   , m_WareHouse(p)
   , unableToProgress(0)
 {
-  FactoryGraphics* myGraphics = new FactoryGraphics(this);
   setCurrentProduction();
 
 }
@@ -87,7 +85,6 @@ WareHouse::WareHouse (point p)
   , activeRail(0)
   , m_ai(new WarehouseAI(this))
 {
-  WareHouseGraphics* myGraphics = new WareHouseGraphics(this);
   toCompletion = newBuildSize;
   capacity = newBuildSize; 
 }

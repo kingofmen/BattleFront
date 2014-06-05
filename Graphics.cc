@@ -1,19 +1,15 @@
 #include "Graphics.hh"
 
-FactoryGraphics::FactoryGraphics (Factory* f)
-  : Graphics<FactoryGraphics, Factory>(this, f)
-  , m_WareHouseDrawer(0)
-  , m_ProducerDrawer(0)
-{
-  m_WareHouseDrawer = new WareHouseGraphics(&(m_Drawable->m_WareHouse)); 
-}
-
-WareHouseGraphics::WareHouseGraphics (WareHouse* w)
-  : Graphics<WareHouseGraphics, WareHouse>(this, w)
+FactoryGraphics::FactoryGraphics (Factory* f, point p)
+  : Graphics<FactoryGraphics, Factory>(this, f, p)
 {}
 
-ProducerGraphics::ProducerGraphics (RawMaterialProducer* p)
-  : Graphics<ProducerGraphics, RawMaterialProducer>(this, p)
+WareHouseGraphics::WareHouseGraphics (WareHouse* w, point p)
+  : Graphics<WareHouseGraphics, WareHouse>(this, w, p)
+{}
+
+ProducerGraphics::ProducerGraphics (RawMaterialProducer* rmp, point p)
+  : Graphics<ProducerGraphics, RawMaterialProducer>(this, rmp, p)
 {}
 
 FactoryGraphics::~FactoryGraphics () {}
