@@ -12,7 +12,7 @@
 
 template <typename Drawer, typename Target> class Graphics : public Iterable<Drawer> {
 public:
-  Graphics<Drawer, Target> (Drawer* d, Target* t, point p) : Iterable<Drawer>(d), m_Drawable(t), location(p) {}
+  Graphics<Drawer, Target> (Drawer* d, Target* t) : Iterable<Drawer>(d), m_Drawable(t) {}
   ~Graphics<Drawer, Target> () {}
 
   virtual void draw () const = 0; 
@@ -25,24 +25,27 @@ public:
     return 0; 
   }
 
-  static Target* select (point p) {
+  static Target* getClicked (point p, Target** closest = 0) {
     double bestDist = 1e20;
+    Target* clicked = 0;
     for (typename Iterable<Drawer>::Iter i = Iterable<Drawer>::start(); i != Iterable<Drawer>::final(); ++i) {
-      double currDist = (*i)->location.distanceSq(p);
-      if (currDist > 100) continue; 
+      if (!(*i)->m_Drawable->player) continue; 
+      double currDist = (*i)->m_Drawable->position.distanceSq(p);
       if (currDist > bestDist) continue;
-      bestDist = currDist;
-      selected = (*i);
+      bestDist = currDist;       
+      if (closest) closest[0] = (*i)->m_Drawable;
+      if (currDist > 100) continue; 
+      clicked = (*i)->m_Drawable;
     }
-    return selected;
+    return clicked; 
   }
 
+  static void select (Target* s) {selected = s;}
   static Target* getSelected () {return selected;}
   static void unSelect () {selected = 0;}
   
 protected:
   Target* m_Drawable;
-  point location;
   static Target* selected; 
 };
 
@@ -50,7 +53,7 @@ template<typename Drawer, typename Target> Target* Graphics<Drawer, Target>::sel
 
 class WareHouseGraphics : public Graphics<WareHouseGraphics, WareHouse> {
 public:
-  WareHouseGraphics (WareHouse* w, point p);
+  WareHouseGraphics (WareHouse* w);
   ~WareHouseGraphics ();
 
   void draw () const;
@@ -61,7 +64,7 @@ private:
 
 class ProducerGraphics : public Graphics<ProducerGraphics, RawMaterialProducer> {
 public:
-  ProducerGraphics (RawMaterialProducer* rmp, point p);
+  ProducerGraphics (RawMaterialProducer* rmp);
   ~ProducerGraphics ();
 
   void draw () const;
@@ -73,7 +76,7 @@ private:
 class FactoryGraphics : public Graphics<FactoryGraphics, Factory> {
   friend class StaticInitialiser;
 public:
-  FactoryGraphics (Factory* f, point p);
+  FactoryGraphics (Factory* f);
   ~FactoryGraphics (); 
 
   void draw () const;

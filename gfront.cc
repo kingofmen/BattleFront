@@ -31,7 +31,6 @@ const int tileSize = 10;
 const int gridWidth = windowWidth / tileSize;
 const int gridHeight = windowHeight / tileSize;
 
-WareHouse* selectedWareHouse = 0;
 bool show_cooldown = false;
 bool show_aidebug = false;
 StringLibrary* bigLetters = 0;
@@ -64,12 +63,12 @@ void drawTiles () {
 }
 
 void drawFactories () {
-  glBegin(GL_TRIANGLES);
+
 
   for (WareHouseGraphics::Iter w = WareHouseGraphics::start(); w != WareHouseGraphics::final(); ++w) {
     (*w)->draw(); 
   }
-  
+  glBegin(GL_TRIANGLES);  
   for (FactoryGraphics::Iter f = FactoryGraphics::start(); f != FactoryGraphics::final(); ++f) {
     (*f)->draw(); 
   }
@@ -78,17 +77,6 @@ void drawFactories () {
     (*f)->draw(); 
   }
   glEnd(); 
-
-  if (selectedWareHouse) {
-    glColor3d(1.0, 1.0, 1.0); 
-    glBegin(GL_LINE_STRIP);
-    glVertex2d(selectedWareHouse->position.x() - 11, selectedWareHouse->position.y() - 11);
-    glVertex2d(selectedWareHouse->position.x() + 13, selectedWareHouse->position.y() - 11);
-    glVertex2d(selectedWareHouse->position.x() + 13, selectedWareHouse->position.y() + 13);
-    glVertex2d(selectedWareHouse->position.x() - 11, selectedWareHouse->position.y() + 13);
-    glVertex2d(selectedWareHouse->position.x() - 11, selectedWareHouse->position.y() - 11);
-    glEnd();
-  }
 
   if (show_aidebug) {
     for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
@@ -144,14 +132,13 @@ void handleKeyPress (SDL_KeyboardEvent& key) {
   case SDLK_q: currentState = Quit;  break;
   case SDLK_c: show_cooldown = !show_cooldown; break;
   case SDLK_a: show_aidebug = !show_aidebug; break; 
-  case SDLK_ESCAPE: selectedWareHouse = 0; break;
+  case SDLK_ESCAPE: WareHouseGraphics::unSelect(); break;
   default: break; 
   }
 }
 
 void handleMouseClick (const SDL_MouseButtonEvent& event) {
   point click(event.x, event.y); 
-  WareHouse* clickedWareHouse = 0; 
 
   static int numkeys[1]; 
   static const Uint8* keystates = SDL_GetKeyboardState(numkeys);
@@ -159,25 +146,19 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   static const int BUILDKEY = SDL_SCANCODE_LCTRL;
   static const int SHIFTKEY = SDL_SCANCODE_LSHIFT; 
 
-  WareHouse* closest = 0;
-  for (WareHouse::Iter fac = WareHouse::start(); fac != WareHouse::final(); ++fac) {
-    if (!(*fac)->player) continue; 
-    if ((!closest) || (click.distanceSq(closest->position) > click.distanceSq((*fac)->position))) closest = (*fac); 
-    if (100 < click.distanceSq((*fac)->position)) continue;
-
-    clickedWareHouse = (*fac);
-    break; 
-  }
-
+  WareHouse* closestWareHouse = 0;
+  WareHouse* selectedWareHouse = WareHouseGraphics::getSelected();
+  WareHouse* clickedWareHouse = WareHouseGraphics::getClicked(click, &closestWareHouse);  
+ 
   if (KEY_DOWN == keystates[BUILDKEY]) {
     if (!clickedWareHouse) {
       // C-click on 'wilderness': Build new WareHouse. 
-      if (1600 > click.distanceSq(closest->position)) return; // No warehouse building this close to others 
+      if (1600 > click.distanceSq(closestWareHouse->position)) return; // No warehouse building this close to others 
 
       // Check for enemy control
-      Tile* closest = Tile::getClosest(click, 0); 
-      if (!closest) return;
-      if (0.75 > closest->avgControl(true)) return; 
+      Tile* closestTile = Tile::getClosest(click, 0); 
+      if (!closestTile) return;
+      if (0.75 > closestTile->avgControl(true)) return; 
 
       // Check if new WareHouse splits a railroad in two
       Railroad* toSplit = 0; 
@@ -198,12 +179,12 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       }
 
       WareHouse* house = new WareHouse(click);
-      new WareHouseGraphics(house, click); 
+      new WareHouseGraphics(house); 
       house->player = true;
 
       if (selectedWareHouse) {
-	selectedWareHouse->connect(house); 
-	selectedWareHouse = 0;
+	selectedWareHouse->connect(house);
+	WareHouseGraphics::unSelect();
       }
 
       if (toSplit) {
@@ -269,8 +250,8 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   }
   else {
     if (!clickedWareHouse) {
-      // Click in wilderness - deselect. 
-      selectedWareHouse = 0;
+      // Click in wilderness - deselect.
+      WareHouseGraphics::unSelect();
       return;
     }
     if (selectedWareHouse == clickedWareHouse) {
@@ -284,7 +265,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       }
     }
     // Left-click on new WareHouse: Select it. 
-    else selectedWareHouse = clickedWareHouse;
+    else WareHouseGraphics::select(clickedWareHouse); 
   }  
 }
 

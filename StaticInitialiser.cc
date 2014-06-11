@@ -12,13 +12,13 @@ void StaticInitialiser::createFactory (Object* fact) {
   fac->m_WareHouse.player = fac->player;
   fac->m_WareHouse.toCompletion = 0;
   Object* rawMaterials = fact->safeGetObject("rawMaterials");
-  new FactoryGraphics(fac, location);
+  new FactoryGraphics(fac);
   if (rawMaterials) {
     RawMaterialProducer* rmp = new RawMaterialProducer(&(fac->m_WareHouse));
     createRawMaterialProducer(rawMaterials, rmp);
-    new ProducerGraphics(rmp, location);
+    new ProducerGraphics(rmp);
   }
-  new WareHouseGraphics(&(fac->m_WareHouse), location); 
+  new WareHouseGraphics(&(fac->m_WareHouse)); 
 }
 
 void StaticInitialiser::createRawMaterialProducer (Object* def, RawMaterialProducer* rmp) {
