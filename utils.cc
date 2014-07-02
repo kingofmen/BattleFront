@@ -76,6 +76,4 @@ ostream& operator<< (ostream& os, const point& p) {
   return os; 
 }
 
-
-
-
+Listener::~Listener () {} 

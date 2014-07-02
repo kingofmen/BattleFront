@@ -128,6 +128,10 @@ public:
     theNumbers[i] = dat;
   }
 
+  Numbered<T> (T* dat) : idx(theNumbers.size()) {
+    theNumbers.push_back(dat); 
+  }
+
   unsigned int getIdx () const {return idx;}
   static T* getByIndex (unsigned int i) {return theNumbers[i];}
   operator unsigned int() const {return idx;}
@@ -149,6 +153,63 @@ public:
   {}
   
 private:
+};
+
+template<class T> class Clickable : public Iterable<T> {
+public:
+  Clickable<T> (T* dat, int x, int y, int w, int h)
+    : Iterable<T>(dat)
+    , xpos(x)
+    , ypos(y)
+    , width(w)
+    , height(h) {}
+
+  static T* getClicked (point p) {
+    return getClicked(p.x(), p.y());
+  }
+  
+  static T* getClicked (int x, int y) {
+    for (typename T::Iter i = T::start(); i != T::final(); ++i) {
+      if ((*i)->isClicked(x, y)) return (*i);
+    }
+    return 0;
+  }
+
+  static T* getClicked (double x, double y) {
+    for (typename T::Iter i = T::start(); i != T::final(); ++i) {
+      if ((*i)->isClicked(x, y)) return (*i);
+    }
+    return 0;
+  }
+ 
+  bool isClicked (int x, int y) {
+    if (x < xpos) return false;
+    if (x > xpos + width) return false;
+    if (y < ypos) return false;
+    if (y > ypos + height) return false;
+    return true;
+  }
+
+  bool isClicked (double x, double y) {
+    if (x < xpos) return false;
+    if (x > xpos + width) return false;
+    if (y < ypos) return false;
+    if (y > ypos + height) return false;
+    return true;
+  }
+  
+
+protected:
+  int xpos;
+  int ypos;
+  int width;
+  int height;
+};
+
+class Listener {
+public:
+  virtual ~Listener ();
+  virtual void clicked (unsigned int buttonId) = 0;
 };
 
 #endif 
