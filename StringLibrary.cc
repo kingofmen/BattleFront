@@ -168,6 +168,14 @@ unsigned int StringLibrary::renderInt (int txt, double x, double y) {
   return width; 
 }
 
+unsigned int StringLibrary::renderFloat (double txt, int precision, double x, double y) {
+  // Returns the width of the rendered number.
+  static char buffer[1000];
+  sprintf(buffer, "%.*f", precision, txt);
+  unsigned int index = renderText(buffer, x, y);
+  return library[index]->getWidth();
+}
+
 unsigned int StringLibrary::renderText (string txt, double x, double y) {
   unsigned int ret = registerText(txt); 
   renderText(ret, x, y);

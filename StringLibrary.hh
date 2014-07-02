@@ -53,6 +53,8 @@ class StringLibrary {
 public:
   StringLibrary (SDL_Color tc, TTF_Font* tf);
 
+  unsigned int getWidth (unsigned int idx) const {return library[idx]->getWidth();} 
+  unsigned int renderFloat (double txt, int precision, double x, double y); 
   unsigned int renderInt (int txt, double x, double y);
   unsigned int registerText (string txt);  
   unsigned int renderText (string txt, double x, double y);
