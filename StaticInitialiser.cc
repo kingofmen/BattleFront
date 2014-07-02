@@ -4,11 +4,13 @@
 #include "Parser.hh"
 #include "Tile.hh" 
 
+const double displayToInternal = 1e-6;
+
 void StaticInitialiser::createFactory (Object* fact) {
   point location(fact->safeGetFloat("xpos"), fact->safeGetFloat("ypos"));
   Factory* fac = new Factory(location);
   fac->player = (fact->safeGetString("human", "no") == "yes");
-  fac->m_Throughput = fact->safeGetFloat("throughput") * 1e-6; // Per second in the file, per microsecond internally. 
+  fac->m_Throughput = fact->safeGetFloat("throughput") * displayToInternal; // Per second in the file, per microsecond internally. 
   fac->m_WareHouse.player = fac->player;
   fac->m_WareHouse.toCompletion = 0;
   Object* rawMaterials = fact->safeGetObject("rawMaterials");
@@ -28,7 +30,7 @@ void StaticInitialiser::createRawMaterialProducer (Object* def, RawMaterialProdu
   double totalCurr = 0;
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
     double prod = maxProd->safeGetFloat((*i)->getName());
-    prod *= 1e-6; // Per second in file, per microsecond internally. 
+    prod *= displayToInternal; // Per second in file, per microsecond internally. 
     if (prod < 0.001) prod = 0.001;
     rmp->maxProduction.add(*i, prod);
     prod = curProd->safeGetFloat((*i)->getName()); 
