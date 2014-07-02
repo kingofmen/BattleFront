@@ -9,13 +9,24 @@
 
 #include "utils.hh"
 #include "Factory.hh"
+#include "StringLibrary.hh"
+#include "Button.hh"
+
+extern StringLibrary* smallLetters; 
 
 template <typename Drawer, typename Target> class Graphics : public Iterable<Drawer> {
 public:
   Graphics<Drawer, Target> (Drawer* d, Target* t) : Iterable<Drawer>(d), m_Drawable(t) {}
   ~Graphics<Drawer, Target> () {}
 
-  virtual void draw () const = 0; 
+  virtual void draw () const = 0;
+  virtual void drawSpecial () const = 0;
+  static void drawAll () {
+    for (typename Iterable<Drawer>::Iter i = Iterable<Drawer>::start(); i != Iterable<Drawer>::final(); ++i) {
+      (*i)->draw(); 
+    }
+  }
+  
   static Drawer* findGraphicsObject (Target const* const t) {
     for (typename Iterable<Drawer>::Iter i = Iterable<Drawer>::start();
 	 i != Iterable<Drawer>::final();
@@ -26,6 +37,7 @@ public:
   }
 
   static Target* getClicked (point p, Target** closest = 0) {
+    // Returns closest Target to click, within 100 pixels.  
     double bestDist = 1e20;
     Target* clicked = 0;
     for (typename Iterable<Drawer>::Iter i = Iterable<Drawer>::start(); i != Iterable<Drawer>::final(); ++i) {
@@ -40,16 +52,19 @@ public:
     return clicked; 
   }
 
-  static void select (Target* s) {selected = s;}
+  static void select (Target* s) {if (!s) {unSelect();} else {selected = s; selectedDrawer = findGraphicsObject(s);}}
   static Target* getSelected () {return selected;}
-  static void unSelect () {selected = 0;}
+  static void drawSelected () {if (selectedDrawer) selectedDrawer->drawSpecial();}
+  static void unSelect () {selected = 0; selectedDrawer = 0;}
   
 protected:
   Target* m_Drawable;
-  static Target* selected; 
+  static Target* selected;
+  static Drawer* selectedDrawer;
 };
 
-template<typename Drawer, typename Target> Target* Graphics<Drawer, Target>::selected = 0; 
+template<typename Drawer, typename Target> Target* Graphics<Drawer, Target>::selected = 0;
+template<typename Drawer, typename Target> Drawer* Graphics<Drawer, Target>::selectedDrawer = 0; 
 
 class WareHouseGraphics : public Graphics<WareHouseGraphics, WareHouse> {
 public:
@@ -57,6 +72,7 @@ public:
   ~WareHouseGraphics ();
 
   void draw () const;
+  void drawSpecial () const; 
 
 private:
 
@@ -68,6 +84,7 @@ public:
   ~ProducerGraphics ();
 
   void draw () const;
+  void drawSpecial () const; 
 
 private:
 
@@ -80,10 +97,20 @@ public:
   ~FactoryGraphics (); 
 
   void draw () const;
+  void drawSpecial () const; 
   
 private:
 
 };
+
+class ButtonGraphics : public Graphics<ButtonGraphics, Button> {
+public:
+  ButtonGraphics (Button* b);
+  ~ButtonGraphics ();
+
+  void draw () const;
+  void drawSpecial () const;   
+}; 
 
 
 #endif 

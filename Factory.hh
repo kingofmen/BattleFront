@@ -47,12 +47,14 @@ struct RawMaterialHolder {
   double getSteel () const {return stockpile[RawMaterial::Steel];}
   double getFuel  () const {return stockpile[RawMaterial::Fuel];}
   double getAmmo  () const {return stockpile[RawMaterial::Ammo];}
-  void normalise  (); 
+  void normalise  ();
+  
 
   RawMaterialHolder& operator-= (const RawMaterialHolder& other);
   RawMaterialHolder& operator+= (const RawMaterialHolder& other);
   RawMaterialHolder& operator*= (const double scale);
-    
+  double& operator[] (unsigned int idx) {return stockpile[idx];}
+  
 private:
   vector<double> stockpile;
 };
@@ -192,8 +194,12 @@ public:
   ~RawMaterialProducer ();
 
   void produce (int elapsedTime); // In microseconds
+  void increaseProduction (RawMaterial* rm);
+  void decreaseProduction (RawMaterial* rm);
   
 private:
+  void setProduction (RawMaterial* rm, double prod);
+  
   RawMaterialHolder maxProduction; // Units per microsecond
   RawMaterialHolder curProduction; // Fractions of maxProduction
 

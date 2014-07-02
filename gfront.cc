@@ -21,6 +21,8 @@
 #include "Graphics.hh" 
 #include "StringLibrary.hh"
 #include "StaticInitialiser.hh" 
+#include "Button.hh"
+#include "Adapters.hh" 
 
 using namespace std; 
 
@@ -37,6 +39,7 @@ StringLibrary* bigLetters = 0;
 StringLibrary* smallLetters = 0;
 enum GameState {Running, Paused, Victory, Defeat, Quit};
 GameState currentState = Running; 
+ProducerButtonAdapter* producerButtonAdapter = 0;
 
 void drawTiles () {
   static const double invMaxTroops = 0.2; 
@@ -63,20 +66,17 @@ void drawTiles () {
 }
 
 void drawFactories () {
+  glBegin(GL_TRIANGLES);
+  WareHouseGraphics::drawAll(); 
+  FactoryGraphics::drawAll(); 
+  ProducerGraphics::drawAll(); 
+  glEnd();
 
+  ButtonGraphics::drawAll(); 
 
-  for (WareHouseGraphics::Iter w = WareHouseGraphics::start(); w != WareHouseGraphics::final(); ++w) {
-    (*w)->draw(); 
-  }
-  glBegin(GL_TRIANGLES);  
-  for (FactoryGraphics::Iter f = FactoryGraphics::start(); f != FactoryGraphics::final(); ++f) {
-    (*f)->draw(); 
-  }
-
-  for (ProducerGraphics::Iter f = ProducerGraphics::start(); f != ProducerGraphics::final(); ++f) {
-    (*f)->draw(); 
-  }
-  glEnd(); 
+  WareHouseGraphics::drawSelected();
+  FactoryGraphics::drawSelected();
+  ProducerGraphics::drawSelected();
 
   if (show_aidebug) {
     for (WareHouse::Iter w = WareHouse::start(); w != WareHouse::final(); ++w) {
@@ -123,6 +123,20 @@ void drawLocomotives () {
   glEnd(); 
 }
 
+void drawButtons () {
+
+}
+
+void selectProducer (RawMaterialProducer* rmp) {
+  if (!rmp) {
+    ProducerGraphics::unSelect();
+    producerButtonAdapter->setActive(false);
+    return;
+  }
+  ProducerGraphics::select(rmp);
+  producerButtonAdapter->setActive(); 
+}
+
 void handleKeyPress (SDL_KeyboardEvent& key) {
   switch (key.keysym.sym) {
   case SDLK_p:
@@ -132,7 +146,10 @@ void handleKeyPress (SDL_KeyboardEvent& key) {
   case SDLK_q: currentState = Quit;  break;
   case SDLK_c: show_cooldown = !show_cooldown; break;
   case SDLK_a: show_aidebug = !show_aidebug; break; 
-  case SDLK_ESCAPE: WareHouseGraphics::unSelect(); break;
+  case SDLK_ESCAPE:
+    WareHouseGraphics::unSelect();
+    selectProducer(0);
+    break;
   default: break; 
   }
 }
@@ -146,10 +163,17 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   static const int BUILDKEY = SDL_SCANCODE_LCTRL;
   static const int SHIFTKEY = SDL_SCANCODE_LSHIFT; 
 
+  Button* clickedButton = Button::getClicked(click);
+  if ((clickedButton) && (clickedButton->isActive())) {
+    clickedButton->click();
+    return; 
+  }
+  
   WareHouse* closestWareHouse = 0;
   WareHouse* selectedWareHouse = WareHouseGraphics::getSelected();
-  WareHouse* clickedWareHouse = WareHouseGraphics::getClicked(click, &closestWareHouse);  
- 
+  WareHouse* clickedWareHouse = WareHouseGraphics::getClicked(click, &closestWareHouse);
+  selectProducer(ProducerGraphics::getClicked(click, 0));
+  
   if (KEY_DOWN == keystates[BUILDKEY]) {
     if (!clickedWareHouse) {
       // C-click on 'wilderness': Build new WareHouse. 
@@ -272,7 +296,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 int main (int argc, char* argv[]) {
   SDL_SetMainReady();  
   StaticInitialiser::initialise(); 
-
+  
   Vertex** grid[gridWidth+1];
   for (int i = 0; i <= gridWidth; ++i) grid[i] = new Vertex*[gridHeight+1];
   for (int xpos = 0; xpos <= gridWidth; ++xpos) {
@@ -291,6 +315,8 @@ int main (int argc, char* argv[]) {
       }
     }
   }
+
+  ProducerButtonAdapter* producerButtonAdapter = ProducerButtonAdapter::getInstance(); 
 
   for (int xpos = 0; xpos < gridWidth; ++xpos) {
     for (int ypos = 0; ypos < gridHeight; ++ypos) {
@@ -374,6 +400,7 @@ int main (int argc, char* argv[]) {
     drawFactories(); 
     drawRailroads();
     drawLocomotives();
+    drawButtons(); 
     if (Victory == currentState) bigLetters->renderText(STR_VICTORY, 470, 300);
     else if (Defeat == currentState) bigLetters->renderText(STR_DEFEAT, 470, 300);
     

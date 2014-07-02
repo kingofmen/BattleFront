@@ -521,6 +521,29 @@ void RawMaterialProducer::produce (int elapsedTime) {
   }
 }
 
+void RawMaterialProducer::increaseProduction (RawMaterial* rm) {
+  double newProduction = min(1.0, curProduction.get(rm) + 0.01);
+  setProduction(rm, newProduction);
+}
+
+void RawMaterialProducer::decreaseProduction (RawMaterial* rm) {
+  double newProduction = max(0.0, curProduction.get(rm) - 0.01);
+  setProduction(rm, newProduction);
+}
+
+void RawMaterialProducer::setProduction (RawMaterial* rm, double prod) {
+  if (prod >= 1) {
+    curProduction.clear();
+    curProduction[*rm] = prod;
+    return; 
+  }
+  
+  curProduction[*rm] = prod;
+  // HERE 
+  
+  curProduction.normalise(); // In case roundoff errors have crept in.
+}
+
 void RawMaterialHolder::clear () {
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) { 
     stockpile[**i] = 0;
