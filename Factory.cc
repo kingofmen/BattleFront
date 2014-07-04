@@ -537,9 +537,25 @@ void RawMaterialProducer::setProduction (RawMaterial* rm, double prod) {
     curProduction[*rm] = prod;
     return; 
   }
-  
+
+  double toRedist = curProduction[*rm] - prod;
+  int numMaterials = RawMaterial::NumRawMaterials - 1;
+  double fraction = 1.0 / numMaterials; 
   curProduction[*rm] = prod;
-  // HERE 
+  while (fabs(toRedist) > 1e-6) {
+    numMaterials = 0; 
+    for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+      if ((*i) == rm) continue;
+      if (curProduction[**i] + toRedist*fraction > 1) continue;
+      if (curProduction[**i] + toRedist*fraction < 0) continue;
+      numMaterials++;
+      curProduction[**i] += toRedist*fraction;
+    }
+    assert(numMaterials > 0); 
+    if (0 == numMaterials) break; // This should never happen.
+    toRedist -= toRedist*numMaterials*fraction;
+    fraction = 1.0 / numMaterials; 
+  }
   
   curProduction.normalise(); // In case roundoff errors have crept in.
 }
