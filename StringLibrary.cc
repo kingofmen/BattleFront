@@ -116,8 +116,6 @@ void LTexture::setAlpha (Uint8 alpha) {
   //SDL_SetTextureAlphaMod(mTexture, alpha);
 }
 
-
-			
 int LTexture::getWidth () {
   return mWidth;
 }
