@@ -89,6 +89,13 @@ WareHouse::WareHouse (point p)
   capacity = newBuildSize; 
 }
 
+bool Building::checkOwnership () {
+  // Returns true if ownership changed. 
+  if (0.25 <= tile->avgControl(player)) return false;
+  player = !player;
+  return true;
+}
+
 bool Building::useToBuild (Packet* packet) {
   // Return true if the packet survives. 
   if (0 <= toCompletion) {
@@ -246,14 +253,12 @@ void WareHouse::toggleRail () {
 }
 
 void WareHouse::update (int elapsedTime) {
-  if (0.25 > tile->avgControl(player)) {
+  if (checkOwnership()) {
     content /= 2;
     release = Release;
-    player = !player;
     activeRail = 0; 
     toCompletion = newBuildSize;
   }
-
   if (!player) m_ai->update(elapsedTime); 
   if ((0 < content) && (Release == release)) {
     releaseTroops(content);
@@ -315,6 +320,11 @@ void Factory::doneProducing () {
 }
 
 void Factory::produce (int elapsedTime) {
+  if (checkOwnership()) {
+    m_ProductionQueue.clear();
+    setCurrentProduction();
+    m_UsedSoFar.clear();
+  }
   double currThroughput = elapsedTime * m_Throughput;
   RawMaterialHolder wantToUse = m_NormalisedCost * currThroughput;
 
@@ -530,6 +540,7 @@ RawMaterialProducer::RawMaterialProducer (WareHouse* w)
 RawMaterialProducer::~RawMaterialProducer () {}
 
 void RawMaterialProducer::produce (int elapsedTime) {
+  checkOwnership(); 
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) { 
     m_WareHouse->add(*i, maxProduction.get(*i) * curProduction.get(*i) * elapsedTime); 
   }

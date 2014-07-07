@@ -74,7 +74,8 @@ struct Building {
   int toCompletion; 
   Tile* tile; 
 
-  bool complete () const {return (0 == toCompletion);} 
+  bool complete () const {return (0 == toCompletion);}
+  bool checkOwnership (); 
   virtual double getCompFraction () const {return 1.0 - 0.001*toCompletion;} 
 
 protected:
