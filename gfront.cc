@@ -40,6 +40,7 @@ StringLibrary* smallLetters = 0;
 enum GameState {Running, Paused, Victory, Defeat, Quit};
 GameState currentState = Running; 
 ProducerButtonAdapter* producerButtonAdapter = 0;
+FactoryButtonAdapter* factoryButtonAdapter = 0; 
 
 void drawTiles () {
   static const double invMaxTroops = 0.2; 
@@ -123,8 +124,14 @@ void drawLocomotives () {
   glEnd(); 
 }
 
-void drawButtons () {
-
+void selectFactory (Factory* fac) {
+  if (!fac) {
+    FactoryGraphics::unSelect();
+    factoryButtonAdapter->setActive(false);
+    return;
+  }
+  FactoryGraphics::select(fac);
+  factoryButtonAdapter->setActive(); 
 }
 
 void selectProducer (RawMaterialProducer* rmp) {
@@ -149,6 +156,7 @@ void handleKeyPress (SDL_KeyboardEvent& key) {
   case SDLK_ESCAPE:
     WareHouseGraphics::unSelect();
     selectProducer(0);
+    selectFactory(0); 
     break;
   default: break; 
   }
@@ -173,6 +181,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   WareHouse* selectedWareHouse = WareHouseGraphics::getSelected();
   WareHouse* clickedWareHouse = WareHouseGraphics::getClicked(click, &closestWareHouse);
   selectProducer(ProducerGraphics::getClicked(click, 0));
+  selectFactory(FactoryGraphics::getClicked(click, 0)); 
   
   if (KEY_DOWN == keystates[BUILDKEY]) {
     if (!clickedWareHouse) {
@@ -316,7 +325,8 @@ int main (int argc, char* argv[]) {
     }
   }
 
-  ProducerButtonAdapter* producerButtonAdapter = ProducerButtonAdapter::getInstance(); 
+  producerButtonAdapter = ProducerButtonAdapter::getInstance();
+  factoryButtonAdapter = FactoryButtonAdapter::getInstance(); 
 
   for (int xpos = 0; xpos < gridWidth; ++xpos) {
     for (int ypos = 0; ypos < gridHeight; ++ypos) {
@@ -400,7 +410,6 @@ int main (int argc, char* argv[]) {
     drawFactories(); 
     drawRailroads();
     drawLocomotives();
-    drawButtons(); 
     if (Victory == currentState) bigLetters->renderText(STR_VICTORY, 470, 300);
     else if (Defeat == currentState) bigLetters->renderText(STR_DEFEAT, 470, 300);
     

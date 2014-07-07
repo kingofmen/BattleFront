@@ -2,7 +2,7 @@
 #define FACTORY_HH
 #include <vector>
 #include <list>
-#include <queue>
+#include <deque>
 #include "utils.hh"
 #include "Packet.hh" 
 
@@ -25,9 +25,11 @@ private:
 class UnitType : public Enumerable<UnitType> {
 public:
   enum {Regiment = 0, Train, Battery, Squadron, NumUnitTypes};
-  UnitType (string n, int i, bool f = false) : Enumerable<UnitType>(this, n, i, f) {} 
+  UnitType (string n, string d, int i, bool f = false) : Enumerable<UnitType>(this, n, i, f), m_DisplayName(d) {} 
+  string getDisplayName () const {return m_DisplayName;}
   
 private:
+  string m_DisplayName; 
   static UnitType* UnitType1;
   static UnitType* UnitType2;
   static UnitType* UnitType3;
@@ -213,9 +215,11 @@ struct Factory : public Building, public Iterable<Factory> {
   Factory (point p);
   WareHouse m_WareHouse; 
 
-  void orderLoco (); 
+  double getCompletion () const;   
+  void orderLoco ();
+  void orderUnit (UnitType* u); 
   void produce (int elapsedTime);
-
+  
 private:
   void doneProducing (); 
   void setCurrentProduction ();
@@ -224,7 +228,7 @@ private:
   RawMaterialHolder m_UsedSoFar;
   RawMaterialHolder m_NormalisedCost; 
   int unableToProgress; 
-  queue<UnitType*> m_ProductionQueue; 
+  deque<UnitType*> m_ProductionQueue; 
   static vector<RawMaterialHolder> s_ProductionCosts; // Costs to make one unit.
 };
 

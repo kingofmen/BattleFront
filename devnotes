@@ -6,7 +6,7 @@
  * Maintenance
  * Ammunition
  * Artillery
- * Create proper graphics class
- * View factory stockpiles
- * Interact with factory priorities 
- 
+ * Create proper graphics class 
+ * View factory stockpiles (check)
+ * Interact with factory priorities (check)
+ * Buttons for production queue (check) 

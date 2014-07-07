@@ -12,10 +12,10 @@ int WarehouseAI::defcon4 = 25;
 int WarehouseAI::defcon3 = 20;
 int WarehouseAI::defcon2 = 10; 
 
-UnitType* UnitType::UnitType1 = new UnitType("regiment", Regiment);
-UnitType* UnitType::UnitType2 = new UnitType("locomotive", Train);
-UnitType* UnitType::UnitType3 = new UnitType("artillery", Battery);
-UnitType* UnitType::UnitType4 = new UnitType("aircraft", Squadron, true);
+UnitType* UnitType::UnitType1 = new UnitType("regiment", "Regiment", Regiment);
+UnitType* UnitType::UnitType2 = new UnitType("locomotive", "Locomotive", Train);
+UnitType* UnitType::UnitType3 = new UnitType("artillery", "Battery", Battery);
+UnitType* UnitType::UnitType4 = new UnitType("aircraft", "Squadron", Squadron, true);
 
 RawMaterial* RawMaterial::RawMaterial1 = new RawMaterial("men", Men);
 RawMaterial* RawMaterial::RawMaterial2 = new RawMaterial("steel", Steel);
@@ -265,19 +265,33 @@ void WareHouse::update (int elapsedTime) {
   }
 }
 
+double Factory::getCompletion () const {
+  double used = 0;
+  double total = 1e-6;
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    used += m_UsedSoFar.get(*i);
+    total += s_ProductionCosts[*m_ProductionQueue.front()].get(*i);
+  }
+  return used/total; 
+}
+
+void Factory::orderUnit (UnitType* u) {
+  m_ProductionQueue.push_back(u); 
+}
+
 void Factory::orderLoco () {
-  m_ProductionQueue.push(UnitType::getByIndex(UnitType::Train)); 
+  m_ProductionQueue.push_back(UnitType::getByIndex(UnitType::Train)); 
 }
 
 void Factory::setCurrentProduction () {
-  if (m_ProductionQueue.empty()) m_ProductionQueue.push(UnitType::getByIndex(UnitType::Regiment));
+  if (m_ProductionQueue.empty()) m_ProductionQueue.push_back(UnitType::getByIndex(UnitType::Regiment));
   m_NormalisedCost = s_ProductionCosts[*m_ProductionQueue.front()];
   m_NormalisedCost.normalise();   
 }
 
 void Factory::doneProducing () {
   UnitType* newUnitType = m_ProductionQueue.front();
-  m_ProductionQueue.pop(); 
+  m_ProductionQueue.pop_front(); 
   setCurrentProduction();
   if (m_ProductionQueue.front() == newUnitType) m_UsedSoFar -= s_ProductionCosts[*newUnitType];
   else m_UsedSoFar.clear();
@@ -313,7 +327,7 @@ void Factory::produce (int elapsedTime) {
   else {
     unableToProgress += elapsedTime;
     if (unableToProgress < 1000000) return;
-    m_ProductionQueue.pop();
+    m_ProductionQueue.pop_front();
     setCurrentProduction(); 
   }
 }

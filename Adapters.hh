@@ -17,5 +17,17 @@ private:
   static ProducerButtonAdapter* instance; 
 };
 
+class FactoryButtonAdapter : public Listener {
+public:
+  static FactoryButtonAdapter* getInstance (); 
+  void clicked (unsigned int buttonId);
+  void setActive (bool act = true);
+  
+private:
+  FactoryButtonAdapter () {}
+  static Button** orderUnits; 
+  static FactoryButtonAdapter* instance; 
+};
+
 
 #endif
