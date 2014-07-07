@@ -17,6 +17,7 @@ void StaticInitialiser::createFactory (Object* fact) {
   new FactoryGraphics(fac);
   if (rawMaterials) {
     RawMaterialProducer* rmp = new RawMaterialProducer(&(fac->m_WareHouse));
+    rmp->player = fac->player; 
     createRawMaterialProducer(rawMaterials, rmp);
     new ProducerGraphics(rmp);
   }
