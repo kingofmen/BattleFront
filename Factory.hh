@@ -22,20 +22,6 @@ private:
   static RawMaterial* RawMaterial4;
 };
 
-class UnitType : public Enumerable<UnitType> {
-public:
-  enum {Regiment = 0, Train, Battery, Squadron, NumUnitTypes};
-  UnitType (string n, string d, int i, bool f = false) : Enumerable<UnitType>(this, n, i, f), m_DisplayName(d) {} 
-  string getDisplayName () const {return m_DisplayName;}
-  
-private:
-  string m_DisplayName; 
-  static UnitType* UnitType1;
-  static UnitType* UnitType2;
-  static UnitType* UnitType3;
-  static UnitType* UnitType4;
-};
-
 struct RawMaterialHolder {
   RawMaterialHolder ();
   RawMaterialHolder (double m, double s, double f, double a);
@@ -49,6 +35,7 @@ struct RawMaterialHolder {
   double getSteel () const {return stockpile[RawMaterial::Steel];}
   double getFuel  () const {return stockpile[RawMaterial::Fuel];}
   double getAmmo  () const {return stockpile[RawMaterial::Ammo];}
+  double getWeight () const {return 1;}
   void normalise  ();
   
 
@@ -64,6 +51,33 @@ private:
 bool operator>= (const RawMaterialHolder& one, const RawMaterialHolder& two);
 RawMaterialHolder operator* (const RawMaterialHolder& rmh, double num);
 RawMaterialHolder operator* (double num, const RawMaterialHolder& rmh);
+
+class UnitType : public Enumerable<UnitType> {
+public:
+  enum {Regiment = 0, Train, Battery, Squadron, NumUnitTypes};
+  UnitType (string n, string d, int i, bool f = false) : Enumerable<UnitType>(this, n, i, f), m_DisplayName(d) {} 
+  string getDisplayName () const {return m_DisplayName;}
+  
+private:
+  string m_DisplayName; 
+  static UnitType* UnitType1;
+  static UnitType* UnitType2;
+  static UnitType* UnitType3;
+  static UnitType* UnitType4;
+};
+
+struct UnitHolder {
+  UnitHolder () : m_Units(UnitType::NumUnitTypes) {}
+  ~UnitHolder () {}
+
+  double getWeight () const {return 1;}
+  int& operator[] (unsigned int idx) {return m_Units[idx];}
+  int& operator[] (UnitType* idx)    {return m_Units[*idx];}
+  
+private:
+  vector<int> m_Units; 
+};
+
 
 struct Building {
   Building (point p);
@@ -83,7 +97,7 @@ protected:
   void releaseTroops (int size, Tile* t = 0);
 };
 
-struct Locomotive : public Iterable<Locomotive> {
+struct Locomotive : public Iterable<Locomotive>, public RawMaterialHolder {
   friend class StaticInitialiser;
   
   Locomotive (WareHouse* h);
@@ -91,7 +105,8 @@ struct Locomotive : public Iterable<Locomotive> {
 
   double getSpeedModifier () const {return maintenance;}
   void repair (int elapsedTime); 
-  void traverse (double distance); 
+  void traverse (double distance);
+  double getLoadWeight () const {return m_Units.getWeight() + getWeight();}
   
   point position;
   Tile* tile; 
@@ -100,6 +115,8 @@ struct Locomotive : public Iterable<Locomotive> {
   WareHouse* destination; 
   Packet* load;
 private:
+  UnitHolder m_Units; 
+  
   static double decayRate;  // Inverse, negative pixels.
   static double repairRate; // Inverse, negative microseconds.
 };
@@ -173,7 +190,8 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   Railroad* connect (WareHouse* other); 
   virtual double getCompFraction () const; 
   void receive (Packet* packet);
-  void receive (Locomotive* loco, Railroad* source); 
+  void receive (Locomotive* loco, Railroad* source);
+  void receive (UnitType* unit); 
   void replaceRail (Railroad* oldRail, Railroad* newRail);
   void sendLoco (WareHouse* other); 
   void toggleHoldState (bool backwards);   
@@ -182,7 +200,10 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   //void add (unsigned int idx, double amount) {add(idx, amount);}
   
 private:
-  static int newBuildSize; 
+  double getLoadCapacity () const {return 100;} 
+  
+  static int newBuildSize;
+  UnitHolder m_Units; 
   Railroad* activeRail; 
   vector<Railroad*> outgoing;
   WarehouseAI* m_ai;

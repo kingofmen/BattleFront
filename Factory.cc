@@ -146,12 +146,18 @@ void WareHouse::receive (Locomotive* loco, Railroad* source) {
     receive(loco->load);
     loco->load = 0;
   }
+  (*this) += (*loco);
+  loco->clear(); 
   if (loco->home == this) locos.push_back(loco);
   else if (source) source->receive(loco, this);
   else {
     loco->home = this;
     locos.push_back(loco);
   }
+}
+
+void WareHouse::receive (UnitType* unit) {
+  m_Units[unit]++; 
 }
 
 void WareHouse::receive (Packet* packet) {
@@ -265,8 +271,30 @@ void WareHouse::update (int elapsedTime) {
     content = 0;
   }
 
+  if ((0 < m_Units[UnitType::Regiment]) && (Release == release)) {
+    releaseTroops(250*m_Units[UnitType::Regiment]);
+    m_Units[UnitType::Regiment] = 0; 
+  }
+  
   for (list<Locomotive*>::iterator loc = locos.begin(); loc != locos.end(); ++loc) {
-    (*loc)->repair(elapsedTime); 
+    (*loc)->repair(elapsedTime);
+  }
+
+  if (0 < locos.size()) {
+    double loadCap = getLoadCapacity() * elapsedTime;
+    for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+      //if (outflows[**i])
+      if (activeRail) {
+	double amountToLoad = min(loadCap, get(*i)); 
+	locos.front()->add(*i, loadCap);
+	loadCap -= amountToLoad;
+	if (loadCap < 1e-6) break;
+      }
+    }
+    if ((0.5 < locos.front()->getLoadWeight()) && (activeRail)) {
+      activeRail->receive(locos.front(), this);
+      locos.pop_front(); 
+    }
   }
 }
 
@@ -300,7 +328,8 @@ void Factory::doneProducing () {
   setCurrentProduction();
   if (m_ProductionQueue.front() == newUnitType) m_UsedSoFar -= s_ProductionCosts[*newUnitType];
   else m_UsedSoFar.clear();
-
+  m_WareHouse.receive(newUnitType); 
+  
   switch (*newUnitType) {
   case UnitType::Regiment:
     {
@@ -309,11 +338,16 @@ void Factory::doneProducing () {
     product->position = position;
     product->player = player; 
     m_WareHouse.receive(product);
+    
     }
     break;
   case UnitType::Train:
     m_WareHouse.receive(new Locomotive(&m_WareHouse), 0);
     break;
+  case UnitType::Battery:
+    break;
+  case UnitType::Squadron:
+    break; 
   default:
     break; 
   }
@@ -380,6 +414,11 @@ void Railroad::receive (Locomotive* loco, WareHouse* source) {
   if ((0 < toCompletion) && (loco->load) && (!useToBuild(loco->load))) {
     loco->load = 0;
     source->receive(loco, this); 
+    return; 
+  }
+
+  if (0 < toCompletion) {
+    source->receive(loco, this);
     return; 
   }
   

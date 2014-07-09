@@ -15,7 +15,7 @@ ai = {
 }
 
 regimentCost = {
-  men  = 50 
+  men  = 250 
   ammo = 50
 }
 

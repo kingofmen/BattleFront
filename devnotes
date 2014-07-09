@@ -10,3 +10,4 @@
  * View factory stockpiles (check)
  * Interact with factory priorities (check)
  * Buttons for production queue (check) 
+ * Refactor old Packet class to use the Neue Ordnung
