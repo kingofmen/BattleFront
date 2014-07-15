@@ -6,7 +6,6 @@
 double Locomotive::decayRate = 1000; // Initially in pixels, will be inverted by StaticInitialiser
 double Locomotive::repairRate = 1e6; // Initially in microseconds. 
 double Railroad::speed = 0.0001;
-int WareHouse::newBuildSize = 500; 
 int WarehouseAI::defcon5 = 30;
 int WarehouseAI::defcon4 = 25;
 int WarehouseAI::defcon3 = 20;
@@ -23,11 +22,12 @@ RawMaterial* RawMaterial::RawMaterial3 = new RawMaterial("fuel", Fuel);
 RawMaterial* RawMaterial::RawMaterial4 = new RawMaterial("ammo", Ammo);
 
 vector<RawMaterialHolder> Factory::s_ProductionCosts(UnitType::NumUnitTypes);
+RawMaterialHolder Railroad::s_Structure;
+RawMaterialHolder WareHouse::s_Structure; 
+vector<CargoCar*> CargoCar::s_AvailableCars; 
 
 Building::Building (point p) 
   : position(p)
-  , capacity(0)
-  , toCompletion(0)
 {
   tile = Tile::getClosest(position, 0); 
 }
@@ -43,7 +43,6 @@ Railroad::Railroad (WareHouse* w1, WareHouse* w2)
   calcEnds(); 
   w1->addRailroad(this);
   w2->addRailroad(this);
-  toCompletion = getLength(); 
 }
 
 Factory::Factory (point p) 
@@ -61,19 +60,28 @@ Locomotive::Locomotive (WareHouse* h)
   , maintenance(1.0)
   , home(h)
   , destination(0)
-  , load(0)
+    //, load(0)
 {}
 
 Locomotive::~Locomotive () {
-  if (load) delete load; 
+  //if (load) delete load; 
 }
+
+CargoCar::CargoCar () 
+  : m_CargoType(0)
+  , m_UnitType(0)
+  , m_UnitAmount(0)
+  , m_CargoAmount(0)
+{}
+
+CargoCar::~CargoCar () {} 
 
 WarehouseAI::WarehouseAI (WareHouse* w)
   : m_WareHouse(w)
   , reinforceTarget(0)
   , reinforcePercentage(0)
   , statusChanged(false)
-  , connection(0) 
+  , connection(0)
 {}
 
 WareHouse::WareHouse (point p) 
@@ -84,9 +92,12 @@ WareHouse::WareHouse (point p)
   , content(0)
   , activeRail(0)
   , m_ai(new WarehouseAI(this))
+  , m_Loading(0)
+  , m_LoadingCompletion(0)
+  , m_UnloadingCompletion(0)    
 {
-  toCompletion = newBuildSize;
-  capacity = newBuildSize; 
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) timeSinceLastLoad[*i] = 0;
+  for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) timeSinceLastLoad[*i] = 0 ;   
 }
 
 bool Building::checkOwnership () {
@@ -96,19 +107,44 @@ bool Building::checkOwnership () {
   return true;
 }
 
-bool Building::useToBuild (Packet* packet) {
-  // Return true if the packet survives. 
-  if (0 <= toCompletion) {
-    if (toCompletion > packet->getSize()) {
-      toCompletion -= packet->getSize();
-      delete packet;
-      return false;
-    }
-    packet->add(Packet::Manpower, -toCompletion);
-    toCompletion = 0; 
-  }
-  return true;
+CargoCar* CargoCar::getCargoCar () {
+  if (0 == s_AvailableCars.size()) return new CargoCar();
+  CargoCar* ret = s_AvailableCars.back();
+  s_AvailableCars.pop_back();
+  ret->m_CargoAmount = 0;
+  ret->m_UnitAmount = 0;   
+  return ret;
 }
+
+CargoCar* CargoCar::getCargoCar (UnitType* unit) {
+  CargoCar* ret = getCargoCar();
+  ret->m_CargoType = 0;
+  ret->m_UnitType = unit; 
+  return ret;
+}
+
+CargoCar* CargoCar::getCargoCar (RawMaterial* rm) {
+  CargoCar* ret = getCargoCar();
+  ret->m_CargoType = rm;
+  ret->m_UnitType = 0;   
+  return ret;
+}
+
+void CargoCar::unloadInto (RawMaterialHolder* rmh, UnitHolder* uh) {
+  if (isRawMaterial()) unloadInto(rmh);
+  else unloadInto(uh);
+}
+
+void CargoCar::unloadInto (UnitHolder* uh) {
+  (*uh)[m_UnitType] += m_UnitAmount;
+  m_UnitAmount = 0; 
+}
+
+void CargoCar::unloadInto (RawMaterialHolder* rmh) {
+  rmh->add(m_CargoType, m_CargoAmount);
+  m_CargoAmount = 0;
+}
+
 
 void Locomotive::repair (int elapsedTime) {
   double diff = 1.0 - maintenance;
@@ -118,6 +154,17 @@ void Locomotive::repair (int elapsedTime) {
 
 void Locomotive::traverse (double distance) {
   maintenance *= exp(distance*decayRate);
+}
+
+void UnitHolder::clear () {
+  for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) { 
+    m_Units[**i] = 0;
+  }
+}
+
+
+bool WareHouse::complete () const {
+  return (m_Structure >= s_Structure); 
 }
 
 Railroad* WareHouse::connect (WareHouse* other) {
@@ -133,21 +180,41 @@ Railroad* WareHouse::connect (WareHouse* other) {
 }
 
 double WareHouse::getCompFraction () const {
-  if (0 >= toCompletion) return 1.0;
-  double ret = newBuildSize; 
-  ret = 1.0 - toCompletion / ret;
-  return ret;
+  double need = 0;
+  double total = 1e-6;
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    need += getNeededAmount(*i);
+    total += getStructureAmount(*i);
+  }
+  need /= total;
+  return (1.0 - need);
+}
+
+double WareHouse::getNeededAmount (RawMaterial const* const rm) const {
+  return max(0.0, getStructureAmount(rm) - m_Structure.get(rm));
+}
+
+double WareHouse::getStructureAmount (RawMaterial const* const rm) const {
+  return s_Structure.get(rm);
 }
 
 void WareHouse::receive (Locomotive* loco, Railroad* source) {
   loco->position = position;
   loco->tile = tile; 
-  if (loco->load) {
+  /*if (loco->load) {
     receive(loco->load);
     loco->load = 0;
   }
-  (*this) += (*loco);
-  loco->clear(); 
+  */
+
+  for (Locomotive::CargoIter c = loco->startCargo(); c != loco->finalCargo(); ++c) {
+    Railroad* out = getOutgoingRailroad(*c);
+    if (out) m_Outgoing[out].push_back(*c);
+    else m_Unloading.push_back(*c);
+
+  }
+  loco->clearCargo(); 
+  
   if (loco->home == this) locos.push_back(loco);
   else if (source) source->receive(loco, this);
   else {
@@ -158,39 +225,6 @@ void WareHouse::receive (Locomotive* loco, Railroad* source) {
 
 void WareHouse::receive (UnitType* unit) {
   m_Units[unit]++; 
-}
-
-void WareHouse::receive (Packet* packet) {
-  // Four options:
-  // 1. Use towards completing this building.
-  // 2. Send on outgoing railroad with capacity.
-  // 3. Store.
-  // 4. Release. 
-
-  if (packet->player != player) {
-    delete packet; // For you, the war is over.
-    return; 
-  }
-
-  if (!useToBuild(packet)) return;
-  if ((activeRail) && (0 < locos.size())) {
-    Locomotive* loco = locos.front();
-    locos.pop_front();
-    loco->load = packet;
-    activeRail->receive(loco, this);
-    m_ai->notify(packet->getSize(), WarehouseAI::Passed);
-    return; 
-  }  
-
-  if ((Release == release) || (Hold == release) || (capacity < content + packet->getSize())) {
-    releaseTroops(packet->getSize());
-    m_ai->notify(packet->getSize(), WarehouseAI::Released); 
-  }
-  else {
-    content += packet->getSize();
-    m_ai->notify(packet->getSize(), WarehouseAI::Held); 
-  }
-  delete packet; 
 }
 
 void WareHouse::sendLoco (WareHouse* other) {
@@ -258,12 +292,26 @@ void WareHouse::toggleRail () {
   }
 }
 
+Railroad* WareHouse::getOutgoingRailroad (RawMaterial* rm) const {
+  if (activeRail) {
+    if (activeRail->complete()) return activeRail;
+    if (0 < activeRail->getNeededAmount(rm)) return activeRail;
+  }    
+  return 0; 
+}
+Railroad* WareHouse::getOutgoingRailroad (UnitType* rm) const {
+  if ((!activeRail) || (!activeRail->complete())) return 0; 
+  return activeRail;
+}
+
 void WareHouse::update (int elapsedTime) {
   if (checkOwnership()) {
     content /= 2;
     release = Release;
     activeRail = 0; 
-    toCompletion = newBuildSize;
+    s_Structure[RawMaterial::Men] = 0;
+    m_Units.clear();
+    (*this) *= 0.5; 
   }
   if (!player) m_ai->update(elapsedTime); 
   if ((0 < content) && (Release == release)) {
@@ -271,6 +319,20 @@ void WareHouse::update (int elapsedTime) {
     content = 0;
   }
 
+  if (!complete()) {
+    for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+      double amount = getNeededAmount(*i);
+      if (0 >= amount) continue;
+      for (Locomotive::CargoIter car = m_Unloading.begin(); car != m_Unloading.end(); ++car) {
+	if ((*car)->getMaterial() != (*i)) continue;
+	(*car)->unloadInto(&m_Structure);
+	if (0 < getNeededAmount(*i)) continue;
+	(*car)->load(m_Structure[**i] - getStructureAmount(*i));
+	m_Structure[**i] = getStructureAmount(*i); 
+      }
+    }
+  }
+  
   if ((0 < m_Units[UnitType::Regiment]) && (Release == release)) {
     releaseTroops(250*m_Units[UnitType::Regiment]);
     m_Units[UnitType::Regiment] = 0; 
@@ -280,21 +342,109 @@ void WareHouse::update (int elapsedTime) {
     (*loc)->repair(elapsedTime);
   }
 
-  if (0 < locos.size()) {
-    double loadCap = getLoadCapacity() * elapsedTime;
+  if (!m_Loading) {
+    // Check if we're sending any raw materials or units anywhere,
+    // and if so, create a new CargoCar to load the stuff into.
+    RawMaterial* bestRM = 0;
     for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
-      //if (outflows[**i])
-      if (activeRail) {
-	double amountToLoad = min(loadCap, get(*i)); 
-	locos.front()->add(*i, loadCap);
-	loadCap -= amountToLoad;
-	if (loadCap < 1e-6) break;
+      if (!getOutgoingRailroad(*i)) continue;
+      if ((!bestRM) || (timeSinceLastLoad[*i] > timeSinceLastLoad[bestRM])) bestRM = (*i);
+    }
+    UnitType* bestUnit = 0;
+    for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) {
+      if (!getOutgoingRailroad(*i)) continue;
+      if ((!bestUnit) || (timeSinceLastLoad[*i] > timeSinceLastLoad[bestUnit])) bestUnit = (*i);
+    }
+
+    if (bestUnit) {
+      if ((bestRM) && (timeSinceLastLoad[bestUnit] < timeSinceLastLoad[bestRM])) {
+	m_Loading =  CargoCar::getCargoCar(bestRM);
+	timeSinceLastLoad[bestRM] = 0;
+      }
+      else {
+	m_Loading = CargoCar::getCargoCar(bestUnit);
+	timeSinceLastLoad[bestUnit] = 0;
       }
     }
-    if ((0.5 < locos.front()->getLoadWeight()) && (activeRail)) {
-      activeRail->receive(locos.front(), this);
-      locos.pop_front(); 
+    else if (bestRM) {
+      m_Loading = CargoCar::getCargoCar(bestRM);
+      timeSinceLastLoad[bestRM] = 0;
     }
+
+    m_LoadingCompletion = 0; 
+  }
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) timeSinceLastLoad[*i] += elapsedTime;
+  for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) timeSinceLastLoad[*i] += elapsedTime;
+  
+  int total = m_Unloading.size() + m_Loading ? 1 : 0;
+  if (0 == total) return; 
+  double loadCap = getLoadCapacity() * elapsedTime;
+  double useToLoad = loadCap / total;
+  if (m_Loading) {
+    m_LoadingCompletion += useToLoad;
+    if (m_LoadingCompletion >= 1e6) {
+      if (m_Loading->isRawMaterial()) {
+	useToLoad = min(useToLoad, get(m_Loading->getMaterial())); 
+	m_Loading->load(useToLoad);
+	add(m_Loading->getMaterial(), -useToLoad); 
+      }
+      else {
+	m_Loading->load(1);
+	m_Units[m_Loading->getUnit()]--;
+      }
+      Railroad* outgoing = getOutgoingRailroad(m_Loading);
+      if (!outgoing) {
+	// Wait, what?
+	m_Unloading.push_back(m_Loading);
+      }
+      else {
+	m_Outgoing[outgoing].push_back(m_Loading); 
+      }
+      m_Loading = 0;
+      m_LoadingCompletion = 0; 
+    }
+    loadCap -= useToLoad; 
+  }
+
+  while ((0 < m_Unloading.size()) && (loadCap > 0)) {
+    CargoCar* current = m_Unloading.front();
+    m_UnloadingCompletion += loadCap;
+    loadCap = 0;
+    if (m_UnloadingCompletion >= 1e6) {
+      loadCap = m_UnloadingCompletion - 1e6;
+      m_Unloading.pop_front();
+      current->unloadInto(this, &m_Units);
+      CargoCar::returnCar(current); 
+      m_UnloadingCompletion = 0; 
+    }
+  }
+
+  // Dispatch locos. 
+  while (0 < locos.size()) {
+    if (locos.front()->getRepairState() < 0.75) break; 
+    Railroad* best = 0;
+    double bestWeight = 0;
+    for (map<Railroad*, list<CargoCar*> >::iterator out = m_Outgoing.begin(); out != m_Outgoing.end(); ++out) {
+      double currWeight = 0;
+      for (list<CargoCar*>::iterator car = (*out).second.begin(); car != (*out).second.end(); ++car) {
+	currWeight += (*car)->getWeight(); 
+      }
+      if (currWeight <= bestWeight) continue;
+      bestWeight = currWeight;
+      best = (*out).first; 
+    }
+    if (!best) break;
+    Locomotive* loco = locos.front();
+    locos.pop_front();
+    bestWeight = 0;
+    while (0 < m_Outgoing[best].size()) {
+      CargoCar* car = m_Outgoing[best].front();
+      m_Outgoing[best].pop_front();
+      loco->load(car);      
+      bestWeight += car->getWeight();
+      if (bestWeight >= 1e7) break; 
+    }
+    if (!best->receive(loco, this)) locos.push_back(loco); 
   }
 }
 
@@ -333,12 +483,6 @@ void Factory::doneProducing () {
   switch (*newUnitType) {
   case UnitType::Regiment:
     {
-    Packet* product = new Packet();
-    product->add(Packet::Manpower, 50);
-    product->position = position;
-    product->player = player; 
-    m_WareHouse.receive(product);
-    
     }
     break;
   case UnitType::Train:
@@ -389,17 +533,33 @@ void Railroad::calcEnds () {
   
 }
 
+bool Railroad::complete () const {
+  return (m_Structure >= s_Structure*getLength()); 
+}
+
 double Railroad::getCompFraction () const {
-  if (0 >= toCompletion) return 1.0;
-  double ret = getLength();
-  ret = 1.0 - toCompletion / ret;
-  return ret;
+  double need = 0;
+  double total = 1e-6;
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    need += getNeededAmount(*i);
+    total += getStructureAmount(*i);
+  }
+  need /= total;
+  return (1.0 - need);
 }
 
 int Railroad::getLength () const {
   point line = twoEnd;
   line -= oneEnd;
   return (int) floor(line.length() + 0.5); 
+}
+
+double Railroad::getNeededAmount (RawMaterial const* const rm) const {
+  return max(0.0, getStructureAmount(rm) - m_Structure.get(rm));
+}
+
+double Railroad::getStructureAmount (RawMaterial const* const rm) const {
+  return s_Structure.get(rm)*getLength();
 }
 
 Railroad* Railroad::findConnector (WareHouse* w1, WareHouse* w2) {
@@ -410,21 +570,41 @@ Railroad* Railroad::findConnector (WareHouse* w1, WareHouse* w2) {
   return 0; 
 }
 
-void Railroad::receive (Locomotive* loco, WareHouse* source) {
-  if ((0 < toCompletion) && (loco->load) && (!useToBuild(loco->load))) {
-    loco->load = 0;
-    source->receive(loco, this); 
-    return; 
+bool Railroad::receive (Locomotive* loco, WareHouse* source) {
+  if (complete()) {
+    locos.push_back(loco);
+    if (source == oneHouse) loco->destination = twoHouse;
+    else loco->destination = oneHouse;
+    return true;
   }
 
-  if (0 < toCompletion) {
-    source->receive(loco, this);
-    return; 
+  for (Locomotive::CargoIter car = loco->startCargo(); car != loco->finalCargo(); ++car) {
+    if (!(*car)->isRawMaterial()) continue;
+    RawMaterial* rm = (*car)->getMaterial();
+    if (0 >= getNeededAmount(rm)) continue;
+    (*car)->unloadInto(&m_Structure);
+    if (0 < getNeededAmount(rm)) continue;
+    (*car)->load(m_Structure[*rm] - getStructureAmount(rm));
+    m_Structure[*rm] = getStructureAmount(rm);     
   }
+  return false; 
+}
+
+
+void Railroad::split (WareHouse* house) {	
+  WareHouse* oldTerminus = twoHouse; 
+  Railroad* newRail = new Railroad(house, oldTerminus);
+  newRail->player = player; 
+  int oldLength = getLength(); 
+  oldTerminus->replaceRail(this, newRail); 
+  house->addRailroad(this); 
+  twoHouse = house; 
+  calcEnds(); 
   
-  locos.push_back(loco);
-  if (source == oneHouse) loco->destination = twoHouse;
-  else loco->destination = oneHouse;
+  double newLength = getLength();
+  double fraction = newLength / oldLength;
+  newRail->m_Structure += m_Structure * (1.0 - fraction);
+  m_Structure *= fraction;
 }
 
 
@@ -432,11 +612,13 @@ void Railroad::update (int elapsedTime) {
   for (list<Locomotive*>::iterator loc = locos.begin(); loc != locos.end(); ++loc) {
     (*loc)->tile = Tile::getClosest((*loc)->position, (*loc)->tile);
     if (1 >= (*loc)->tile->frontDistance()) {
+      /*
       if ((*loc)->load) {
 	releaseTroops((*loc)->load->getSize(), (*loc)->tile); 
 	delete (*loc)->load;
 	(*loc)->load = 0;
       }
+      */
       (*loc)->destination = (*loc)->home;
       (*loc)->maintenance *= 0.90; 
     }
@@ -630,6 +812,14 @@ void RawMaterialHolder::clear () {
   }
 }
 
+double RawMaterialHolder::getTotal () const {
+  double ret = 0;
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    ret += stockpile[**i];
+  }
+  return ret;
+}
+
 void RawMaterialHolder::normalise () {
   double total = 0;
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) total += stockpile[**i];
@@ -641,6 +831,13 @@ void RawMaterialHolder::normalise () {
 bool operator>= (const RawMaterialHolder& one, const RawMaterialHolder& two) {
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {  
     if (one.get(*i) < two.get(*i)) return false;
+  }
+  return true;
+}
+
+bool operator> (const RawMaterialHolder& one, const RawMaterialHolder& two) {
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {  
+    if (one.get(*i) <= two.get(*i)) return false;
   }
   return true;
 }

@@ -4,7 +4,6 @@
 #include <list>
 #include <deque>
 #include "utils.hh"
-#include "Packet.hh" 
 
 using namespace std; 
 class Tile; 
@@ -36,6 +35,7 @@ struct RawMaterialHolder {
   double getFuel  () const {return stockpile[RawMaterial::Fuel];}
   double getAmmo  () const {return stockpile[RawMaterial::Ammo];}
   double getWeight () const {return 1;}
+  double getTotal () const; 
   void normalise  ();
   
 
@@ -49,6 +49,7 @@ private:
 };
 
 bool operator>= (const RawMaterialHolder& one, const RawMaterialHolder& two);
+bool operator> (const RawMaterialHolder& one, const RawMaterialHolder& two);
 RawMaterialHolder operator* (const RawMaterialHolder& rmh, double num);
 RawMaterialHolder operator* (double num, const RawMaterialHolder& rmh);
 
@@ -70,6 +71,7 @@ struct UnitHolder {
   UnitHolder () : m_Units(UnitType::NumUnitTypes) {}
   ~UnitHolder () {}
 
+  void clear (); 
   double getWeight () const {return 1;}
   int& operator[] (unsigned int idx) {return m_Units[idx];}
   int& operator[] (UnitType* idx)    {return m_Units[*idx];}
@@ -84,17 +86,44 @@ struct Building {
 
   bool player; 
   point position; 
-  int capacity;
-  int toCompletion; 
   Tile* tile; 
 
-  bool complete () const {return (0 == toCompletion);}
+  virtual bool complete () const {return true;}
   bool checkOwnership (); 
-  virtual double getCompFraction () const {return 1.0 - 0.001*toCompletion;} 
+  virtual double getCompFraction () const {return 1.0;}
 
 protected:
-  bool useToBuild (Packet* packet); 
+  RawMaterialHolder m_Structure; // RMs used for the actual building, as opposed to stored in it. 
   void releaseTroops (int size, Tile* t = 0);
+};
+
+class CargoCar {
+public:
+  bool isRawMaterial () const {return m_CargoType != 0;}
+  RawMaterial* getMaterial () const {return m_CargoType;}
+  UnitType* getUnit () const {return m_UnitType;}
+  void load (double amount) {m_CargoAmount += amount;}
+  void load (int amount) {m_UnitAmount =+ amount;}
+  void unloadInto (RawMaterialHolder* rmh);
+  void unloadInto (UnitHolder* uh); 
+  void unloadInto (RawMaterialHolder* rmh, UnitHolder* uh); 
+  double getWeight () const {return m_CargoAmount;} 
+  
+  static CargoCar* getCargoCar (UnitType* unit);
+  static CargoCar* getCargoCar (RawMaterial* rm); 
+  static CargoCar* returnCar (CargoCar* car) {s_AvailableCars.push_back(car);}
+    
+private:
+  CargoCar ();
+  ~CargoCar ();
+
+  static CargoCar* getCargoCar (); 
+  static vector<CargoCar*> s_AvailableCars; 
+  
+  RawMaterial* m_CargoType;
+  UnitType* m_UnitType;
+  int m_UnitAmount;
+  double m_CargoAmount; 
 };
 
 struct Locomotive : public Iterable<Locomotive>, public RawMaterialHolder {
@@ -103,18 +132,25 @@ struct Locomotive : public Iterable<Locomotive>, public RawMaterialHolder {
   Locomotive (WareHouse* h);
   ~Locomotive (); 
 
+  void load (CargoCar* car) {m_Cargo.push_back(car);}
   double getSpeedModifier () const {return maintenance;}
   void repair (int elapsedTime); 
   void traverse (double distance);
   double getLoadWeight () const {return m_Units.getWeight() + getWeight();}
+  double getRepairState () const {return maintenance;} 
+
+  typedef list<CargoCar*>::iterator CargoIter ;
+  CargoIter startCargo () {return m_Cargo.begin();}
+  CargoIter finalCargo () {return m_Cargo.end();}
+  void clearCargo () {m_Cargo.clear();} 
   
   point position;
   Tile* tile; 
   double maintenance;
   WareHouse* home;
   WareHouse* destination; 
-  Packet* load;
 private:
+  list<CargoCar*> m_Cargo; 
   UnitHolder m_Units; 
   
   static double decayRate;  // Inverse, negative pixels.
@@ -126,11 +162,15 @@ struct Railroad : public Building, public Iterable<Railroad> {
   
   Railroad (WareHouse* w1, WareHouse* w2); 
 
-  void calcEnds (); 
+  void calcEnds ();
+  virtual bool complete () const;
   virtual double getCompFraction () const; 
   int getLength () const; 
-  void receive (Locomotive* loco, WareHouse* source);
+  bool receive (Locomotive* loco, WareHouse* source);
+  void split (WareHouse* house);
   void update (int elapsedTime);
+  double getNeededAmount (RawMaterial const* const rm) const;    // Returns the remaining needed
+  double getStructureAmount (RawMaterial const* const rm) const; // Returns the total to build this railroad
 
   static Railroad* findConnector (WareHouse* w1, WareHouse* w2); 
 
@@ -142,6 +182,7 @@ struct Railroad : public Building, public Iterable<Railroad> {
 
 private:
   static double speed; // Pixels per microsecond
+  static RawMaterialHolder s_Structure; // RMs per unit length. 
   list<Locomotive*> locos; 
 };
 
@@ -187,9 +228,11 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   int content; 
 
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
-  Railroad* connect (WareHouse* other); 
-  virtual double getCompFraction () const; 
-  void receive (Packet* packet);
+  Railroad* connect (WareHouse* other);
+  virtual bool complete () const;
+  virtual double getCompFraction () const;
+  double getNeededAmount (RawMaterial const* const rm) const;    // Returns the remaining needed
+  double getStructureAmount (RawMaterial const* const rm) const; // Returns the total to build this warehouse
   void receive (Locomotive* loco, Railroad* source);
   void receive (UnitType* unit); 
   void replaceRail (Railroad* oldRail, Railroad* newRail);
@@ -197,17 +240,28 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   void toggleHoldState (bool backwards);   
   void toggleRail ();
   void update (int elapsedTime);
-  //void add (unsigned int idx, double amount) {add(idx, amount);}
   
 private:
-  double getLoadCapacity () const {return 100;} 
+  double getLoadCapacity () const {return 100;}
+  Railroad* getOutgoingRailroad (CargoCar* cargo) const {return cargo->isRawMaterial() ? getOutgoingRailroad(cargo->getMaterial()) : getOutgoingRailroad(cargo->getUnit());}
+  Railroad* getOutgoingRailroad (RawMaterial* rm) const;
+  Railroad* getOutgoingRailroad (UnitType* rm) const;
+
+  double m_LoadingCompletion;
+  double m_UnloadingCompletion;
+  map<Railroad*, list<CargoCar*> > m_Outgoing;
+  list<CargoCar*> m_Unloading;
+  CargoCar* m_Loading;
+  map<void*, int> timeSinceLastLoad; 
   
-  static int newBuildSize;
-  UnitHolder m_Units; 
+  UnitHolder m_Units;
+  
   Railroad* activeRail; 
   vector<Railroad*> outgoing;
   WarehouseAI* m_ai;
   list<Locomotive*> locos;
+
+  static RawMaterialHolder s_Structure; 
 };
 
 class RawMaterialProducer : public Building, public Iterable<RawMaterialProducer> {

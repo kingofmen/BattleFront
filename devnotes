@@ -11,3 +11,13 @@
  * Interact with factory priorities (check)
  * Buttons for production queue (check) 
  * Refactor old Packet class to use the Neue Ordnung
+   - Deal with incoming loco (check)
+   - Load CargoCars (check)
+   - Unload CargoCars (check) 
+   - Dispatch locos (check) 
+   - Build railroads and buildings (check) 
+   - Strip out old code (check)
+     + Split code in gfront (check)
+     + Packet files (check)
+     + toCompletion and friends in Factory (check)
+     

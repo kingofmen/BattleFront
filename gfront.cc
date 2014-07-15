@@ -100,7 +100,7 @@ void drawRailroads () {
     end *= (*r)->getCompFraction();
     end += (*r)->oneEnd;
     glVertex2d((*r)->oneEnd.x(), (*r)->oneEnd.y());
-    glVertex2d(end.x(), end.y()); 
+    glVertex2d(end.x(), end.y());
     if ((*r)->oneHouse->activeRail == (*r)) {
       glVertex2d((*r)->oneEnd.x(), (*r)->oneEnd.y());
       glVertex2d((*r)->oneHouse->position.x(), (*r)->oneHouse->position.y());
@@ -110,7 +110,7 @@ void drawRailroads () {
       glVertex2d((*r)->twoHouse->position.x(), (*r)->twoHouse->position.y());
     }
   }
-  glEnd(); 
+  glEnd();
 }
 
 void drawLocomotives () {
@@ -214,35 +214,11 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       WareHouse* house = new WareHouse(click);
       new WareHouseGraphics(house); 
       house->player = true;
-
-      if (selectedWareHouse) {
-	selectedWareHouse->connect(house);
-	WareHouseGraphics::unSelect();
-      }
-
       if (toSplit) {
-	WareHouse* oldTerminus = toSplit->twoHouse; 
-	Railroad* newRail = new Railroad(house, oldTerminus);
-	int oldLength = toSplit->getLength(); 
-	oldTerminus->replaceRail(toSplit, newRail); 
-	house->addRailroad(toSplit); 
-	house->toggleRail(); 
-	int locos = toSplit->capacity;
-	newRail->capacity = (locos/2);
-	toSplit->capacity = (locos/2) + (locos%2); 
-	toSplit->twoHouse = house; 
-	toSplit->calcEnds(); 
-	
-	if (0 < toSplit->toCompletion) {
-	  int newLength = toSplit->getLength(); 
-	  int completed = oldLength - toSplit->toCompletion; 
-	  if (completed > newLength) {
-	    toSplit->toCompletion = 0;
-	    newRail->toCompletion -= (completed - newLength);
-	  }
-	  else toSplit->toCompletion -= (oldLength - newLength); 
-	}
-	else newRail->toCompletion = 0; 
+	toSplit->split(house);
+      }
+      if ((selectedWareHouse) && (!Railroad::findConnector(selectedWareHouse, house))) {
+	selectedWareHouse->connect(house);
       }
     }
     else {

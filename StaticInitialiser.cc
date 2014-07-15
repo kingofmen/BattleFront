@@ -12,7 +12,9 @@ void StaticInitialiser::createFactory (Object* fact) {
   fac->player = (fact->safeGetString("human", "no") == "yes");
   fac->m_Throughput = fact->safeGetFloat("throughput") * displayToInternal; // Per second in the file, per microsecond internally. 
   fac->m_WareHouse.player = fac->player;
-  fac->m_WareHouse.toCompletion = 0;
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    fac->m_WareHouse.m_Structure[**i] = fac->m_WareHouse.getStructureAmount(*i);
+  }
   Object* rawMaterials = fact->safeGetObject("rawMaterials");
   new FactoryGraphics(fac);
   if (rawMaterials) {
@@ -58,7 +60,6 @@ void StaticInitialiser::initialise () {
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
   Vertex::coolDownFactor = config->safeGetFloat("cooldown", Vertex::coolDownFactor); 
   Vertex::attritionRate = config->safeGetFloat("attrition", Vertex::attritionRate);
-  WareHouse::newBuildSize = config->safeGetInt("newDepotSize", WareHouse::newBuildSize);
 
   Object* ai = config->getNeededObject("ai");
   WarehouseAI::defcon5 = ai->safeGetInt("defcon5", WarehouseAI::defcon5);
@@ -70,15 +71,20 @@ void StaticInitialiser::initialise () {
   Locomotive::repairRate = (-1.0) / config->safeGetFloat("locoRepairTime", Locomotive::repairRate);
 
   for (UnitType::Iter ut = UnitType::start(); ut != UnitType::final(); ++ut) {
-    Factory::s_ProductionCosts[**ut].clear(); 
     string keyword = (*ut)->getName();
     keyword += "Cost";
     Object* currCost = config->safeGetObject(keyword);
     assert(currCost);
-    for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
-      Factory::s_ProductionCosts[**ut].add(*i, currCost->safeGetFloat((*i)->getName()));
-    }
+    loadRawMaterials(currCost, &Factory::s_ProductionCosts[**ut]);
   }
+
+  Object* railCost = config->safeGetObject("railCost");
+  assert(railCost);
+  loadRawMaterials(railCost, &Railroad::s_Structure);
+
+  railCost = config->safeGetObject("baseCost");
+  assert(railCost);
+  loadRawMaterials(railCost, &WareHouse::s_Structure); 
 }
 
 void StaticInitialiser::loadSave (string fname) {
@@ -89,10 +95,9 @@ void StaticInitialiser::loadSave (string fname) {
   }
 }
 
-void StaticInitialiser::setPacket (Object* object, Packet* packet) {
-  if (!object) return;
-  packet->clear(); 
-  packet->add(Packet::Manpower, object->safeGetInt("manpower"));
-  packet->add(Packet::Gasoline, object->safeGetInt("gasoline"));
-  packet->add(Packet::Materiel, object->safeGetInt("materiel"));   
+void StaticInitialiser::loadRawMaterials (Object* def, RawMaterialHolder* rmh) {
+  rmh->clear();
+  for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+    rmh->add((*i), def->safeGetFloat((*i)->getName()));
+  }
 }

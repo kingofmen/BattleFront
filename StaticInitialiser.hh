@@ -3,8 +3,8 @@
 #include <string> 
 
 class Object;
-class Packet;
-class RawMaterialProducer; 
+class RawMaterialProducer;
+class RawMaterialHolder; 
 using namespace std;
 
 class StaticInitialiser {
@@ -13,8 +13,8 @@ public:
   static void loadSave (string fname);
 private:
   static void createFactory (Object* fact);
-  static void createRawMaterialProducer (Object* def, RawMaterialProducer* rmp);   
-  static void setPacket (Object* object, Packet* packet);  
+  static void createRawMaterialProducer (Object* def, RawMaterialProducer* rmp);
+  static void loadRawMaterials (Object* def, RawMaterialHolder* rmh); 
 };
 
 #endif
