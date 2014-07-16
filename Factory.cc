@@ -591,7 +591,8 @@ bool Railroad::receive (Locomotive* loco, WareHouse* source) {
 }
 
 
-void Railroad::split (WareHouse* house) {	
+void Railroad::split (WareHouse* house) {
+  double compFraction = getCompFraction(); 
   WareHouse* oldTerminus = twoHouse; 
   Railroad* newRail = new Railroad(house, oldTerminus);
   newRail->player = player; 
@@ -603,8 +604,13 @@ void Railroad::split (WareHouse* house) {
   
   double newLength = getLength();
   double fraction = newLength / oldLength;
-  newRail->m_Structure += m_Structure * (1.0 - fraction);
-  m_Structure *= fraction;
+  if (fraction < compFraction) {
+    fraction /= compFraction;
+    newRail->m_Structure += m_Structure * (1.0 - fraction);
+    for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
+      m_Structure[**i] = getStructureAmount(*i);
+    }
+  }
 }
 
 
