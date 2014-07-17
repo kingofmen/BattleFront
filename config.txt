@@ -48,3 +48,10 @@ baseCost = {
   men   = 5000
   steel = 1000
 }
+
+defaultUnitStructure = {
+  regiment = 0
+  locomotive = 1
+  artillery = 1
+  aircraft = 1
+}

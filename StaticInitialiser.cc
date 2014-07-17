@@ -84,7 +84,10 @@ void StaticInitialiser::initialise () {
 
   railCost = config->safeGetObject("baseCost");
   assert(railCost);
-  loadRawMaterials(railCost, &WareHouse::s_Structure); 
+  loadRawMaterials(railCost, &WareHouse::s_Structure);
+
+  Object* defaultUnits = config->safeGetObject("defaultUnitStructure");
+  loadUnits(defaultUnits, &WareHouse::s_DefaultUnitsAllowed); 
 }
 
 void StaticInitialiser::loadSave (string fname) {
@@ -97,7 +100,16 @@ void StaticInitialiser::loadSave (string fname) {
 
 void StaticInitialiser::loadRawMaterials (Object* def, RawMaterialHolder* rmh) {
   rmh->clear();
+  if (!def) return; 
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
     rmh->add((*i), def->safeGetFloat((*i)->getName()));
+  }
+}
+
+void StaticInitialiser::loadUnits (Object* def, UnitHolder* uh) {
+  uh->clear();
+  if (!def) return; 
+  for (UnitType::Iter u = UnitType::start(); u != UnitType::final(); ++u) {
+    (*uh)[*u] = def->safeGetInt((*u)->getName()); 
   }
 }

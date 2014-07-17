@@ -255,13 +255,15 @@ private:
   map<void*, int> timeSinceLastLoad; 
   
   UnitHolder m_Units;
+  UnitHolder m_UnitsAllowed; 
   
   Railroad* activeRail; 
   vector<Railroad*> outgoing;
   WarehouseAI* m_ai;
   list<Locomotive*> locos;
 
-  static RawMaterialHolder s_Structure; 
+  static RawMaterialHolder s_Structure;
+  static UnitHolder s_DefaultUnitsAllowed; 
 };
 
 class RawMaterialProducer : public Building, public Iterable<RawMaterialProducer> {

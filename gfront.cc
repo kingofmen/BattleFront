@@ -16,7 +16,6 @@
 
 #include "utils.hh" 
 #include "Tile.hh" 
-#include "Packet.hh" 
 #include "Factory.hh"
 #include "Graphics.hh" 
 #include "StringLibrary.hh"

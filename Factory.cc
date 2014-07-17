@@ -23,7 +23,8 @@ RawMaterial* RawMaterial::RawMaterial4 = new RawMaterial("ammo", Ammo);
 
 vector<RawMaterialHolder> Factory::s_ProductionCosts(UnitType::NumUnitTypes);
 RawMaterialHolder Railroad::s_Structure;
-RawMaterialHolder WareHouse::s_Structure; 
+RawMaterialHolder WareHouse::s_Structure;
+UnitHolder WareHouse::s_DefaultUnitsAllowed; 
 vector<CargoCar*> CargoCar::s_AvailableCars; 
 
 Building::Building (point p) 
@@ -97,7 +98,8 @@ WareHouse::WareHouse (point p)
   , m_UnloadingCompletion(0)    
 {
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) timeSinceLastLoad[*i] = 0;
-  for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) timeSinceLastLoad[*i] = 0 ;   
+  for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) timeSinceLastLoad[*i] = 0 ;
+  m_UnitsAllowed = s_DefaultUnitsAllowed; 
 }
 
 bool Building::checkOwnership () {
