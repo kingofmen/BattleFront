@@ -58,7 +58,12 @@ public:
   enum {Regiment = 0, Train, Battery, Squadron, NumUnitTypes};
   UnitType (string n, string d, int i, bool f = false) : Enumerable<UnitType>(this, n, i, f), m_DisplayName(d) {} 
   string getDisplayName () const {return m_DisplayName;}
-  
+
+  bool isTrain () const {return (getIdx() == Train);}
+
+  static UnitType const* const getRegiment () {return UnitType1;}
+  static UnitType const* const getTrain () {return UnitType2;}
+
 private:
   string m_DisplayName; 
   static UnitType* UnitType1;
@@ -167,7 +172,8 @@ struct Railroad : public Building, public Iterable<Railroad> {
   void calcEnds ();
   virtual bool complete () const;
   virtual double getCompFraction () const; 
-  int getLength () const; 
+  int getLength () const;
+  WareHouse* getOther (WareHouse* one) const {return (one == oneHouse ? twoHouse : (one == twoHouse ? oneHouse : 0));} 
   bool receive (Locomotive* loco, WareHouse* source);
   void split (WareHouse* house);
   void update (int elapsedTime);
@@ -232,7 +238,7 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   double getNeededAmount (RawMaterial const* const rm) const;    // Returns the remaining needed
   double getStructureAmount (RawMaterial const* const rm) const; // Returns the total to build this warehouse
   void receive (Locomotive* loco, Railroad* source);
-  void receive (UnitType* unit); 
+  void receive (UnitType const* const unit); 
   void replaceRail (Railroad* oldRail, Railroad* newRail);
   void sendLoco (WareHouse* other); 
   void toggleRail ();
@@ -291,8 +297,7 @@ struct Factory : public Building, public Iterable<Factory> {
   WareHouse m_WareHouse; 
 
   double getCompletion () const;   
-  void orderLoco ();
-  void orderUnit (UnitType* u); 
+  void orderUnit (UnitType const* const u); 
   void produce (int elapsedTime);
   
 private:
@@ -303,7 +308,7 @@ private:
   RawMaterialHolder m_UsedSoFar;
   RawMaterialHolder m_NormalisedCost; 
   int unableToProgress; 
-  deque<UnitType*> m_ProductionQueue; 
+  deque<UnitType const*> m_ProductionQueue; 
   static vector<RawMaterialHolder> s_ProductionCosts; // Costs to make one unit.
 };
 

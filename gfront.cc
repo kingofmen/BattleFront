@@ -227,7 +227,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 	if (clickedWareHouse == selectedWareHouse) {
 	  for (Factory::Iter f = Factory::start(); f != Factory::final(); ++f) {
 	    if (clickedWareHouse != &(*f)->m_WareHouse) continue;
-	    (*f)->orderLoco(); 
+	    (*f)->orderUnit(UnitType::getTrain()); 
 	    break;
 	  }
 	}

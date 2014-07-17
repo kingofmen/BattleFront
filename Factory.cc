@@ -215,11 +215,13 @@ void WareHouse::receive (Locomotive* loco, Railroad* source) {
   else {
     loco->home = this;
     locos.push_back(loco);
+    m_Units[UnitType::Train]++; 
   }
 }
 
-void WareHouse::receive (UnitType* unit) {
-  m_Units[unit]++; 
+void WareHouse::receive (UnitType const* const unit) {
+  m_Units[unit]++;
+  if (unit->isTrain()) receive(new Locomotive(this), 0);
 }
 
 void WareHouse::sendLoco (WareHouse* other) {
@@ -232,7 +234,9 @@ void WareHouse::sendLoco (WareHouse* other) {
   Locomotive* loco = locos.front();
   locos.pop_front();
   loco->home = other;
-  connection->receive(loco, this); 
+  connection->receive(loco, this);
+  m_Units[UnitType::Train]--;
+  other->m_Units[UnitType::Train]++;
 }
 
 void Building::releaseTroops (int size, Tile* t) {
@@ -285,9 +289,9 @@ Railroad* WareHouse::getOutgoingRailroad (RawMaterial* rm) const {
   }    
   return 0; 
 }
-Railroad* WareHouse::getOutgoingRailroad (UnitType const* const rm) const {
+Railroad* WareHouse::getOutgoingRailroad (UnitType const* const ut) const {
   if ((!activeRail) || (!activeRail->complete())) return 0;
-  if (m_Units.get(rm) < m_UnitsDesired.get(rm)) return 0; 
+  if (m_Units.get(ut) <= m_UnitsDesired.get(ut)) return 0; 
   return activeRail;
 }
 
@@ -334,6 +338,7 @@ void WareHouse::update (int elapsedTime) {
     }
     UnitType* bestUnit = 0;
     for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) {
+      if ((*i) == UnitType::getTrain()) continue; // Treat trains specially, below. 
       if (!getOutgoingRailroad(*i)) continue;
       if (m_Units[*i] < m_UnitsDesired[*i]) continue; // Don't send away units when we are below quota. 
       if ((!bestUnit) || (timeSinceLastLoad[*i] > timeSinceLastLoad[bestUnit])) bestUnit = (*i);
@@ -423,6 +428,12 @@ void WareHouse::update (int elapsedTime) {
     else m_Unloading.push_back(current);
   }
 
+  if (0 < locos.size()) {
+    Railroad* locoTarget = getOutgoingRailroad(UnitType::getTrain());
+    // Note, this will only be nonzero if we have enough trains locally.
+    if (locoTarget) sendLoco(locoTarget->getOther(this));
+  }
+  
   // Dispatch locos. 
   while (0 < locos.size()) {
     if (locos.front()->getRepairState() < 0.75) break; 
@@ -450,6 +461,8 @@ void WareHouse::update (int elapsedTime) {
     }
     if (!best->receive(loco, this)) locos.push_back(loco); 
   }
+
+  
 }
 
 double Factory::getCompletion () const {
@@ -462,43 +475,23 @@ double Factory::getCompletion () const {
   return used/total; 
 }
 
-void Factory::orderUnit (UnitType* u) {
+void Factory::orderUnit (UnitType const* const u) {
   m_ProductionQueue.push_back(u); 
 }
 
-void Factory::orderLoco () {
-  m_ProductionQueue.push_back(UnitType::getByIndex(UnitType::Train)); 
-}
-
 void Factory::setCurrentProduction () {
-  if (m_ProductionQueue.empty()) m_ProductionQueue.push_back(UnitType::getByIndex(UnitType::Regiment));
+  if (m_ProductionQueue.empty()) m_ProductionQueue.push_back(UnitType::getRegiment()); 
   m_NormalisedCost = s_ProductionCosts[*m_ProductionQueue.front()];
   m_NormalisedCost.normalise();   
 }
 
 void Factory::doneProducing () {
-  UnitType* newUnitType = m_ProductionQueue.front();
+  UnitType const* const newUnitType = m_ProductionQueue.front();
   m_ProductionQueue.pop_front(); 
   setCurrentProduction();
   if (m_ProductionQueue.front() == newUnitType) m_UsedSoFar -= s_ProductionCosts[*newUnitType];
   else m_UsedSoFar.clear();
   m_WareHouse.receive(newUnitType); 
-  
-  switch (*newUnitType) {
-  case UnitType::Regiment:
-    {
-    }
-    break;
-  case UnitType::Train:
-    m_WareHouse.receive(new Locomotive(&m_WareHouse), 0);
-    break;
-  case UnitType::Battery:
-    break;
-  case UnitType::Squadron:
-    break; 
-  default:
-    break; 
-  }
 }
 
 void Factory::produce (int elapsedTime) {
