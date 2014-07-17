@@ -223,10 +223,6 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   
   WareHouse (point p);
 
-  enum State {Accumulate, Hold, Release}; 
-  State release; 
-  int content; 
-
   void addRailroad (Railroad* r) {outgoing.push_back(r);}
   Railroad* connect (WareHouse* other);
   virtual bool complete () const;
@@ -237,7 +233,6 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   void receive (UnitType* unit); 
   void replaceRail (Railroad* oldRail, Railroad* newRail);
   void sendLoco (WareHouse* other); 
-  void toggleHoldState (bool backwards);   
   void toggleRail ();
   void update (int elapsedTime);
   

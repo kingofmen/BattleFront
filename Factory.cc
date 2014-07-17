@@ -89,8 +89,6 @@ WareHouse::WareHouse (point p)
   : Building(p)
   , RawMaterialHolder()
   , Iterable<WareHouse>(this)
-  , release(Release)
-  , content(0)
   , activeRail(0)
   , m_ai(new WarehouseAI(this))
   , m_Loading(0)
@@ -271,15 +269,6 @@ void WareHouse::replaceRail (Railroad* oldRail, Railroad* newRail) {
   if (!found) outgoing.push_back(newRail); 
 }
 
-void WareHouse::toggleHoldState (bool backwards) {
-  switch (release) {
-  default:
-  case Release:    release = backwards ? Hold       : Accumulate; break;
-  case Accumulate: release = backwards ? Release    : Hold;       break;
-  case Hold:       release = backwards ? Accumulate : Release;    break; 
-  }
-}
-
 void WareHouse::toggleRail () {
   if (0 == outgoing.size()) return; 
   if (!activeRail) activeRail = outgoing.front(); 
@@ -308,18 +297,12 @@ Railroad* WareHouse::getOutgoingRailroad (UnitType* rm) const {
 
 void WareHouse::update (int elapsedTime) {
   if (checkOwnership()) {
-    content /= 2;
-    release = Release;
     activeRail = 0; 
     s_Structure[RawMaterial::Men] = 0;
     m_Units.clear();
     (*this) *= 0.5; 
   }
   if (!player) m_ai->update(elapsedTime); 
-  if ((0 < content) && (Release == release)) {
-    releaseTroops(content);
-    content = 0;
-  }
 
   if (!complete()) {
     for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
@@ -334,12 +317,13 @@ void WareHouse::update (int elapsedTime) {
       }
     }
   }
-  
-  if ((0 < m_Units[UnitType::Regiment]) && (Release == release)) {
-    releaseTroops(250*m_Units[UnitType::Regiment]);
-    m_Units[UnitType::Regiment] = 0; 
+
+  if (m_Units[UnitType::Regiment] > m_UnitsAllowed[UnitType::Regiment]) {
+    int release = m_Units[UnitType::Regiment] - m_UnitsAllowed[UnitType::Regiment];
+    releaseTroops(250*release);
+    m_Units[UnitType::Regiment] = m_UnitsAllowed[UnitType::Regiment]; 
   }
-  
+
   for (list<Locomotive*>::iterator loc = locos.begin(); loc != locos.end(); ++loc) {
     (*loc)->repair(elapsedTime);
   }

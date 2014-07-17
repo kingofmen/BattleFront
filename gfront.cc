@@ -252,8 +252,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       // Shift-left-click: Upgrade
     }
     else {
-      // Shift-right-click: Toggle hold state backwards. 
-      selectedWareHouse->toggleHoldState(true);
+      // Shift-right-click: Nothing
     }
   }
   else {
@@ -268,8 +267,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
 	selectedWareHouse->toggleRail();
       }
       else {
-	// Right-click on selected: Toggle hold state forwards. 
-	selectedWareHouse->toggleHoldState(false);
+	// Right-click on selected: Nothing
       }
     }
     // Left-click on new WareHouse: Select it. 
