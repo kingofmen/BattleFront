@@ -73,8 +73,10 @@ struct UnitHolder {
 
   void clear (); 
   double getWeight () const {return 1;}
-  int& operator[] (unsigned int idx) {return m_Units[idx];}
-  int& operator[] (UnitType* idx)    {return m_Units[*idx];}
+  int get (unsigned int idx) const            {return m_Units[idx];}
+  int get (UnitType const* const idx) const   {return m_Units[*idx];}
+  int& operator[] (unsigned int idx)          {return m_Units[idx];}
+  int& operator[] (UnitType const* const idx) {return m_Units[*idx];}
   
 private:
   vector<int> m_Units; 
@@ -240,7 +242,7 @@ private:
   double getLoadCapacity () const {return 100;}
   Railroad* getOutgoingRailroad (CargoCar* cargo) const {return cargo->isRawMaterial() ? getOutgoingRailroad(cargo->getMaterial()) : getOutgoingRailroad(cargo->getUnit());}
   Railroad* getOutgoingRailroad (RawMaterial* rm) const;
-  Railroad* getOutgoingRailroad (UnitType* rm) const;
+  Railroad* getOutgoingRailroad (UnitType const* const rm) const;
 
   double m_LoadingCompletion;
   double m_UnloadingCompletion;
@@ -250,7 +252,7 @@ private:
   map<void*, int> timeSinceLastLoad; 
   
   UnitHolder m_Units;
-  UnitHolder m_UnitsAllowed; 
+  UnitHolder m_UnitsDesired; 
   
   Railroad* activeRail; 
   vector<Railroad*> outgoing;
@@ -258,7 +260,7 @@ private:
   list<Locomotive*> locos;
 
   static RawMaterialHolder s_Structure;
-  static UnitHolder s_DefaultUnitsAllowed; 
+  static UnitHolder s_DefaultUnitsDesired; 
 };
 
 class RawMaterialProducer : public Building, public Iterable<RawMaterialProducer> {

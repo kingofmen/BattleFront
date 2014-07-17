@@ -24,7 +24,7 @@ RawMaterial* RawMaterial::RawMaterial4 = new RawMaterial("ammo", Ammo);
 vector<RawMaterialHolder> Factory::s_ProductionCosts(UnitType::NumUnitTypes);
 RawMaterialHolder Railroad::s_Structure;
 RawMaterialHolder WareHouse::s_Structure;
-UnitHolder WareHouse::s_DefaultUnitsAllowed; 
+UnitHolder WareHouse::s_DefaultUnitsDesired; 
 vector<CargoCar*> CargoCar::s_AvailableCars; 
 
 Building::Building (point p) 
@@ -97,7 +97,7 @@ WareHouse::WareHouse (point p)
 {
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) timeSinceLastLoad[*i] = 0;
   for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) timeSinceLastLoad[*i] = 0 ;
-  m_UnitsAllowed = s_DefaultUnitsAllowed; 
+  m_UnitsDesired = s_DefaultUnitsDesired; 
 }
 
 bool Building::checkOwnership () {
@@ -201,11 +201,6 @@ double WareHouse::getStructureAmount (RawMaterial const* const rm) const {
 void WareHouse::receive (Locomotive* loco, Railroad* source) {
   loco->position = position;
   loco->tile = tile; 
-  /*if (loco->load) {
-    receive(loco->load);
-    loco->load = 0;
-  }
-  */
 
   for (Locomotive::CargoIter c = loco->startCargo(); c != loco->finalCargo(); ++c) {
     Railroad* out = getOutgoingRailroad(*c);
@@ -290,8 +285,9 @@ Railroad* WareHouse::getOutgoingRailroad (RawMaterial* rm) const {
   }    
   return 0; 
 }
-Railroad* WareHouse::getOutgoingRailroad (UnitType* rm) const {
-  if ((!activeRail) || (!activeRail->complete())) return 0; 
+Railroad* WareHouse::getOutgoingRailroad (UnitType const* const rm) const {
+  if ((!activeRail) || (!activeRail->complete())) return 0;
+  if (m_Units.get(rm) < m_UnitsDesired.get(rm)) return 0; 
   return activeRail;
 }
 
@@ -318,10 +314,10 @@ void WareHouse::update (int elapsedTime) {
     }
   }
 
-  if (m_Units[UnitType::Regiment] > m_UnitsAllowed[UnitType::Regiment]) {
-    int release = m_Units[UnitType::Regiment] - m_UnitsAllowed[UnitType::Regiment];
+  if (m_Units[UnitType::Regiment] > m_UnitsDesired[UnitType::Regiment]) {
+    int release = m_Units[UnitType::Regiment] - m_UnitsDesired[UnitType::Regiment];
     releaseTroops(250*release);
-    m_Units[UnitType::Regiment] = m_UnitsAllowed[UnitType::Regiment]; 
+    m_Units[UnitType::Regiment] = m_UnitsDesired[UnitType::Regiment]; 
   }
 
   for (list<Locomotive*>::iterator loc = locos.begin(); loc != locos.end(); ++loc) {
@@ -339,6 +335,7 @@ void WareHouse::update (int elapsedTime) {
     UnitType* bestUnit = 0;
     for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) {
       if (!getOutgoingRailroad(*i)) continue;
+      if (m_Units[*i] < m_UnitsDesired[*i]) continue; // Don't send away units when we are below quota. 
       if ((!bestUnit) || (timeSinceLastLoad[*i] > timeSinceLastLoad[bestUnit])) bestUnit = (*i);
     }
 
@@ -392,8 +389,20 @@ void WareHouse::update (int elapsedTime) {
     loadCap -= useToLoad; 
   }
 
+
+  list<CargoCar*> shuntAside; 
   while ((0 < m_Unloading.size()) && (loadCap > 0)) {
     CargoCar* current = m_Unloading.front();
+    if (!current->isRawMaterial()) {
+      UnitType const* const ut = current->getUnit();
+      if ((ut->getIdx() != UnitType::Regiment) && (m_Units[*ut] >= m_UnitsDesired[*ut])) {
+	// Don't unload surplus units, except Regiments. 
+	shuntAside.push_back(current);
+	m_Unloading.pop_front();
+	continue; 
+      }
+    }
+    
     m_UnloadingCompletion += loadCap;
     loadCap = 0;
     if (m_UnloadingCompletion >= 1e6) {
@@ -403,6 +412,15 @@ void WareHouse::update (int elapsedTime) {
       CargoCar::returnCar(current); 
       m_UnloadingCompletion = 0; 
     }
+  }
+
+  // Check if we have a destination now, otherwise re-queue for next round. 
+  while (0 < shuntAside.size()) {
+    CargoCar* current = shuntAside.front();
+    shuntAside.pop_front();
+    Railroad* out = getOutgoingRailroad(current->getUnit());
+    if (out) m_Outgoing[out].push_back(current);
+    else m_Unloading.push_back(current);
   }
 
   // Dispatch locos. 

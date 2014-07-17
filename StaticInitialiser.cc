@@ -87,7 +87,7 @@ void StaticInitialiser::initialise () {
   loadRawMaterials(railCost, &WareHouse::s_Structure);
 
   Object* defaultUnits = config->safeGetObject("defaultUnitStructure");
-  loadUnits(defaultUnits, &WareHouse::s_DefaultUnitsAllowed); 
+  loadUnits(defaultUnits, &WareHouse::s_DefaultUnitsDesired); 
 }
 
 void StaticInitialiser::loadSave (string fname) {
