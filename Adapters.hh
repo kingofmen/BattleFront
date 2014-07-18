@@ -29,5 +29,18 @@ private:
   static FactoryButtonAdapter* instance; 
 };
 
+class WarehouseButtonAdapter : public Listener {
+public:
+  static WarehouseButtonAdapter* getInstance (); 
+  void clicked (unsigned int buttonId);
+  void setActive (bool act = true);
+  
+private:
+  WarehouseButtonAdapter () {}
+  static Button** increaseUnits;
+  static Button** decreaseUnits; 
+  static WarehouseButtonAdapter* instance; 
+};
+
 
 #endif

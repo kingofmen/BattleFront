@@ -39,7 +39,8 @@ StringLibrary* smallLetters = 0;
 enum GameState {Running, Paused, Victory, Defeat, Quit};
 GameState currentState = Running; 
 ProducerButtonAdapter* producerButtonAdapter = 0;
-FactoryButtonAdapter* factoryButtonAdapter = 0; 
+FactoryButtonAdapter* factoryButtonAdapter = 0;
+WarehouseButtonAdapter* warehouseButtonAdapter = 0; 
 
 void drawTiles () {
   static const double invMaxTroops = 0.2; 
@@ -123,6 +124,16 @@ void drawLocomotives () {
   glEnd(); 
 }
 
+void selectWarehouse (WareHouse* war) {
+  if (!war) {
+    WareHouseGraphics::unSelect();
+    warehouseButtonAdapter->setActive(false);
+    return; 
+  }
+  WareHouseGraphics::select(war);
+  warehouseButtonAdapter->setActive(true);
+}
+
 void selectFactory (Factory* fac) {
   if (!fac) {
     FactoryGraphics::unSelect();
@@ -153,7 +164,7 @@ void handleKeyPress (SDL_KeyboardEvent& key) {
   case SDLK_c: show_cooldown = !show_cooldown; break;
   case SDLK_a: show_aidebug = !show_aidebug; break; 
   case SDLK_ESCAPE:
-    WareHouseGraphics::unSelect();
+    selectWarehouse(0);
     selectProducer(0);
     selectFactory(0); 
     break;
@@ -258,7 +269,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
   else {
     if (!clickedWareHouse) {
       // Click in wilderness - deselect.
-      WareHouseGraphics::unSelect();
+      selectWarehouse(0);
       return;
     }
     if (selectedWareHouse == clickedWareHouse) {
@@ -271,7 +282,7 @@ void handleMouseClick (const SDL_MouseButtonEvent& event) {
       }
     }
     // Left-click on new WareHouse: Select it. 
-    else WareHouseGraphics::select(clickedWareHouse); 
+    else selectWarehouse(clickedWareHouse); 
   }  
 }
 
@@ -300,7 +311,8 @@ int main (int argc, char* argv[]) {
 
   producerButtonAdapter = ProducerButtonAdapter::getInstance();
   factoryButtonAdapter = FactoryButtonAdapter::getInstance(); 
-
+  warehouseButtonAdapter = WarehouseButtonAdapter::getInstance(); 
+  
   for (int xpos = 0; xpos < gridWidth; ++xpos) {
     for (int ypos = 0; ypos < gridHeight; ++ypos) {
       Tile* curr = new Tile(grid[xpos+0][ypos+0],

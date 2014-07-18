@@ -243,6 +243,7 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   void sendLoco (WareHouse* other); 
   void toggleRail ();
   void update (int elapsedTime);
+  void desire (UnitType const* const ut, int amount) {m_UnitsDesired[ut] += amount; if (0 > m_UnitsDesired[ut]) m_UnitsDesired[ut] = 0;}
   
 private:
   double getLoadCapacity () const {return 100;}

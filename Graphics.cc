@@ -37,7 +37,7 @@ void FactoryGraphics::drawSpecial () const {
   int xpos = 34;
   int offset = 5;
   int ypos = 234;
-  for (deque<UnitType*>::iterator u = m_Drawable->m_ProductionQueue.begin(); u != m_Drawable->m_ProductionQueue.end(); ++u) {
+  for (deque<UnitType const*>::iterator u = m_Drawable->m_ProductionQueue.begin(); u != m_Drawable->m_ProductionQueue.end(); ++u) {
     offset += smallLetters->getWidth(smallLetters->renderText((*u)->getDisplayName(), xpos, ypos));
     if (u == m_Drawable->m_ProductionQueue.begin()) {
       offset += smallLetters->renderFloat(m_Drawable->getCompletion()*100, 1, xpos + offset, ypos);
@@ -75,7 +75,17 @@ void WareHouseGraphics::drawSpecial () const {
   for (RawMaterial::Iter r = RawMaterial::start(); r != RawMaterial::final(); ++r) {
     smallLetters->renderFloat(m_Drawable->get(*r), 2, textXPos, textYPos);
     textYPos += 25; 
-  }  
+  }
+
+  smallLetters->renderText("Units", 140, 110); 
+  textYPos = 124;
+  for (UnitType::Iter u = UnitType::start(); u != UnitType::final(); ++u) {
+    textXPos = 134;									    
+    textXPos += smallLetters->renderInt(m_Drawable->m_Units.get(*u), textXPos, textYPos);
+    textXPos += smallLetters->getWidth(smallLetters->renderText(" / ", textXPos, textYPos));
+    textXPos += smallLetters->renderInt(m_Drawable->m_UnitsDesired.get(*u), textXPos, textYPos);
+    textYPos += 25; 
+  }    
 }
 
 void ProducerGraphics::draw () const {
