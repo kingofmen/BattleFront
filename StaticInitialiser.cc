@@ -60,6 +60,7 @@ void StaticInitialiser::initialise () {
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
   Vertex::coolDownFactor = config->safeGetFloat("cooldown", Vertex::coolDownFactor); 
   Vertex::attritionRate = config->safeGetFloat("attrition", Vertex::attritionRate);
+  Vertex::artilleryScaleFactor = config->safeGetFloat("artilleryEffect", Vertex::artilleryScaleFactor);
 
   Object* ai = config->getNeededObject("ai");
   WarehouseAI::defcon5 = ai->safeGetInt("defcon5", WarehouseAI::defcon5);

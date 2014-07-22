@@ -8,7 +8,8 @@ double Vertex::troopMoveRate = 0.001;
 double Vertex::fightRate = 0.0000001; 
 double Vertex::minimumGarrison = 1; 
 double Vertex::coolDownFactor = 10000;
-double Vertex::attritionRate = 0.01; 
+double Vertex::attritionRate = 0.01;
+double Vertex::artilleryScaleFactor = 1; 
 
 Vertex::Vertex (point p, bool c, double t) 
   : Iterable<Vertex>(this)
@@ -63,8 +64,11 @@ void Vertex::fight (int elapsedTime) {
   }
 
   for (Iter v = start(); v != final(); ++v) {
-    // Casualties proportional to enemy troops. 
-    double casualties = fightRate * (*v)->enemyTroops* elapsedTime;
+    // Casualties proportional to enemy troops.
+    (*v)->m_LossesInfantry = (*v)->enemyTroops * fightRate * elapsedTime;
+    // Modified by artillery.
+    (*v)->m_LossesArtillery = (*v)->m_LossesInfantry * artilleryScaleFactor * (*v)->player ? (*v)->artillery.second : (*v)->artillery.first;
+    double casualties = (*v)->m_LossesArtillery + (*v)->m_LossesInfantry; 
     if (1e-20 > casualties) continue; 
     if ((*v)->debug) std::cout << (*v)->position << " taking casualties " << casualties << std::endl;
     (*v)->troops -= casualties;
@@ -117,7 +121,8 @@ void Vertex::move (int elapsedTime) {
   
   for (Iter v = start(); v != final(); ++v) {
     (*v)->cooldown -= elapsedTime;
-    if (0 > (*v)->cooldown) (*v)->cooldown = 0; 
+    if (0 > (*v)->cooldown) (*v)->cooldown = 0;
+    (*v)->artillery.first = (*v)->artillery.second = 0; 
   }
 
   // Retreat everywhere that's outnumbered by 4 to 1 or more 
@@ -201,7 +206,7 @@ void Vertex::move (int elapsedTime) {
     }
   }
   
-  countTroops(); 
+  countTroops();
 }
 
 Vertex* Vertex::getClosestFighting (const point& pos, bool player) {

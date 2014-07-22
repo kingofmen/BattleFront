@@ -9,6 +9,7 @@ using namespace std;
 class Tile; 
 class Object;
 struct WareHouse;
+struct Vertex; 
 
 class RawMaterial : public Enumerable<RawMaterial> {
 public:
@@ -61,15 +62,16 @@ public:
 
   bool isTrain () const {return (getIdx() == Train);}
 
-  static UnitType const* const getRegiment () {return UnitType1;}
-  static UnitType const* const getTrain () {return UnitType2;}
+  static UnitType const* const getArtillery () {return UnitArtillery;} 
+  static UnitType const* const getRegiment () {return UnitRegiment;}
+  static UnitType const* const getTrain () {return UnitLocomotive;}
 
 private:
   string m_DisplayName; 
-  static UnitType* UnitType1;
-  static UnitType* UnitType2;
-  static UnitType* UnitType3;
-  static UnitType* UnitType4;
+  static UnitType* UnitRegiment;
+  static UnitType* UnitLocomotive;
+  static UnitType* UnitArtillery;
+  static UnitType* UnitAircraft;
 };
 
 struct UnitHolder {
@@ -246,11 +248,12 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   void desire (UnitType const* const ut, int amount) {m_UnitsDesired[ut] += amount; if (0 > m_UnitsDesired[ut]) m_UnitsDesired[ut] = 0;}
   
 private:
+  void calculateInfluence (int elapsedTime); 
   double getLoadCapacity () const {return 100;}
   Railroad* getOutgoingRailroad (CargoCar* cargo) const {return cargo->isRawMaterial() ? getOutgoingRailroad(cargo->getMaterial()) : getOutgoingRailroad(cargo->getUnit());}
   Railroad* getOutgoingRailroad (RawMaterial* rm) const;
   Railroad* getOutgoingRailroad (UnitType const* const rm) const;
-
+  
   double m_LoadingCompletion;
   double m_UnloadingCompletion;
   map<Railroad*, list<CargoCar*> > m_Outgoing;
@@ -260,12 +263,16 @@ private:
   
   UnitHolder m_Units;
   UnitHolder m_UnitsDesired; 
+  int m_ArtilleryPace;
+  int m_AirforcePace; 
   
   Railroad* activeRail; 
   vector<Railroad*> outgoing;
   WarehouseAI* m_ai;
   list<Locomotive*> locos;
-
+  vector<Vertex*> m_VerticesInRange;
+  
+  static double s_ArtilleryRangeSq; 
   static RawMaterialHolder s_Structure;
   static UnitHolder s_DefaultUnitsDesired; 
 };

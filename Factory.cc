@@ -11,10 +11,10 @@ int WarehouseAI::defcon4 = 25;
 int WarehouseAI::defcon3 = 20;
 int WarehouseAI::defcon2 = 10; 
 
-UnitType* UnitType::UnitType1 = new UnitType("regiment", "Regiment", Regiment);
-UnitType* UnitType::UnitType2 = new UnitType("locomotive", "Locomotive", Train);
-UnitType* UnitType::UnitType3 = new UnitType("artillery", "Battery", Battery);
-UnitType* UnitType::UnitType4 = new UnitType("aircraft", "Squadron", Squadron, true);
+UnitType* UnitType::UnitRegiment = new UnitType("regiment", "Regiment", Regiment);
+UnitType* UnitType::UnitLocomotive = new UnitType("locomotive", "Locomotive", Train);
+UnitType* UnitType::UnitArtillery = new UnitType("artillery", "Battery", Battery);
+UnitType* UnitType::UnitAircraft = new UnitType("aircraft", "Squadron", Squadron, true);
 
 RawMaterial* RawMaterial::RawMaterial1 = new RawMaterial("men", Men);
 RawMaterial* RawMaterial::RawMaterial2 = new RawMaterial("steel", Steel);
@@ -24,7 +24,8 @@ RawMaterial* RawMaterial::RawMaterial4 = new RawMaterial("ammo", Ammo);
 vector<RawMaterialHolder> Factory::s_ProductionCosts(UnitType::NumUnitTypes);
 RawMaterialHolder Railroad::s_Structure;
 RawMaterialHolder WareHouse::s_Structure;
-UnitHolder WareHouse::s_DefaultUnitsDesired; 
+UnitHolder WareHouse::s_DefaultUnitsDesired;
+double WareHouse::s_ArtilleryRangeSq = 6400; 
 vector<CargoCar*> CargoCar::s_AvailableCars; 
 
 Building::Building (point p) 
@@ -89,11 +90,13 @@ WareHouse::WareHouse (point p)
   : Building(p)
   , RawMaterialHolder()
   , Iterable<WareHouse>(this)
+  , m_LoadingCompletion(0)
+  , m_UnloadingCompletion(0)
+  , m_Loading(0)    
   , activeRail(0)
   , m_ai(new WarehouseAI(this))
-  , m_Loading(0)
-  , m_LoadingCompletion(0)
-  , m_UnloadingCompletion(0)    
+  , m_ArtilleryPace(1)
+  , m_AirforcePace(1)
 {
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) timeSinceLastLoad[*i] = 0;
   for (UnitType::Iter i = UnitType::start(); i != UnitType::final(); ++i) timeSinceLastLoad[*i] = 0 ;
@@ -165,6 +168,50 @@ void UnitHolder::clear () {
 
 bool WareHouse::complete () const {
   return (m_Structure >= s_Structure); 
+}
+
+void WareHouse::calculateInfluence (int elapsedTime) {
+  int effectiveUnits = m_Units[UnitType::Battery];
+  if (0 == effectiveUnits) return;
+  int effectivePace = m_ArtilleryPace;
+  if (0 == effectivePace) return;
+
+  if (0 == m_VerticesInRange.size()) {
+    for (Vertex::Iter v = Vertex::start(); v != Vertex::final(); ++v) {
+      if ((*v)->position.distanceSq(position) > s_ArtilleryRangeSq) continue;
+      m_VerticesInRange.push_back(*v);
+    }
+  }
+  
+  vector<Vertex*> toShootAt;
+  for (vector<Vertex*>::iterator v = m_VerticesInRange.begin(); v != m_VerticesInRange.end(); ++v) {
+    if ((*v)->player == player) continue; // Only shoot at enemy vertices
+    if (0 < (*v)->getFrontDistance()) continue; // near the front.
+    toShootAt.push_back(*v);
+  }
+
+  if (0 == toShootAt.size()) return;
+  double timeInSeconds = elapsedTime * 0.001; 
+  double ammunitionNeeded = timeInSeconds * effectivePace * effectiveUnits;
+
+  while (ammunitionNeeded > getAmmo()) {
+    if (effectiveUnits < 2) break;
+    effectiveUnits--; 
+    ammunitionNeeded = timeInSeconds * effectivePace * effectiveUnits;
+  }
+
+  while (ammunitionNeeded > getAmmo()) {
+    effectivePace--;
+    ammunitionNeeded = timeInSeconds * effectivePace * effectiveUnits;
+  }
+
+  if (0 == effectivePace) return;
+  (*this)[RawMaterial::Ammo] -= ammunitionNeeded; // Subtract absolute amount used
+  ammunitionNeeded /= (timeInSeconds * toShootAt.size()); // Convert back to per-second rate for Tile
+  
+  for (vector<Vertex*>::iterator v = toShootAt.begin(); v != toShootAt.end(); ++v) {
+    (*v)->artillerise(player, ammunitionNeeded);
+  }
 }
 
 Railroad* WareHouse::connect (WareHouse* other) {
@@ -303,7 +350,8 @@ void WareHouse::update (int elapsedTime) {
     (*this) *= 0.5; 
   }
   if (!player) m_ai->update(elapsedTime); 
-
+  calculateInfluence(elapsedTime); 
+  
   if (!complete()) {
     for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
       double amount = getNeededAmount(*i);
@@ -371,6 +419,7 @@ void WareHouse::update (int elapsedTime) {
   if (m_Loading) {
     m_LoadingCompletion += useToLoad;
     if (m_LoadingCompletion >= 1e6) {
+      Railroad* outgoing = getOutgoingRailroad(m_Loading); // Must come before reducing m_Units, otherwise may get a null. 
       if (m_Loading->isRawMaterial()) {
 	useToLoad = min(useToLoad, get(m_Loading->getMaterial())); 
 	m_Loading->load(useToLoad);
@@ -380,7 +429,6 @@ void WareHouse::update (int elapsedTime) {
 	m_Loading->load(1);
 	m_Units[m_Loading->getUnit()]--;
       }
-      Railroad* outgoing = getOutgoingRailroad(m_Loading);
       if (!outgoing) {
 	// Wait, what?
 	m_Unloading.push_back(m_Loading);
@@ -394,14 +442,13 @@ void WareHouse::update (int elapsedTime) {
     loadCap -= useToLoad; 
   }
 
-
   list<CargoCar*> shuntAside; 
   while ((0 < m_Unloading.size()) && (loadCap > 0)) {
     CargoCar* current = m_Unloading.front();
     if (!current->isRawMaterial()) {
       UnitType const* const ut = current->getUnit();
-      if ((ut->getIdx() != UnitType::Regiment) && (m_Units[*ut] >= m_UnitsDesired[*ut])) {
-	// Don't unload surplus units, except Regiments. 
+      if ((ut->getIdx() != UnitType::Regiment) && (m_Units.get(ut) >= m_UnitsDesired.get(ut))) {
+	// Don't unload surplus units, except Regiments.
 	shuntAside.push_back(current);
 	m_Unloading.pop_front();
 	continue; 

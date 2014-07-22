@@ -4,6 +4,7 @@ troopMoveRate = 0.001
 minimumGarrison = 1
 cooldown = 50000
 attrition = 0.01
+artilleryEffect = 1
 locoDecayDistance = 1000
 locoRepairTime = 1000000 
 ai = {
@@ -12,8 +13,6 @@ ai = {
   defcon3 = 20
   defcon2 = 10
 }
-
-
 
 regimentCost = {
   men  = 250 

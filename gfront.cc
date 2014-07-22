@@ -33,6 +33,7 @@ const int gridWidth = windowWidth / tileSize;
 const int gridHeight = windowHeight / tileSize;
 
 bool show_cooldown = false;
+bool show_artillery = false; 
 bool show_aidebug = false;
 StringLibrary* bigLetters = 0;
 StringLibrary* smallLetters = 0;
@@ -63,6 +64,18 @@ void drawTiles () {
       glVertex2d((*v)->position.x(), (*v)->position.y());
     }
     glEnd(); 
+  }
+
+  if (show_artillery) {
+    glBegin(GL_POINTS);
+    for (Vertex::Iter v = Vertex::start(); v != Vertex::final(); ++v) {
+      double artillery = (*v)->m_LossesArtillery; 
+      if (0 >= artillery) continue; 
+      glColor3d(20.2*artillery, 20.2*artillery, 20.2*artillery); 
+      glVertex2d((*v)->position.x(), (*v)->position.y());
+    }
+    glEnd(); 
+
   }
 }
 
@@ -162,7 +175,8 @@ void handleKeyPress (SDL_KeyboardEvent& key) {
     break;
   case SDLK_q: currentState = Quit;  break;
   case SDLK_c: show_cooldown = !show_cooldown; break;
-  case SDLK_a: show_aidebug = !show_aidebug; break; 
+  case SDLK_a: show_aidebug = !show_aidebug; break;
+  case SDLK_r: show_artillery = !show_artillery; break; 
   case SDLK_ESCAPE:
     selectWarehouse(0);
     selectProducer(0);
