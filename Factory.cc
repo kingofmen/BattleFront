@@ -191,7 +191,7 @@ void WareHouse::calculateInfluence (int elapsedTime) {
   }
 
   if (0 == toShootAt.size()) return;
-  double timeInSeconds = elapsedTime * 0.001; 
+  double timeInSeconds = elapsedTime * 1e-6; // Microseconds to seconds 
   double ammunitionNeeded = timeInSeconds * effectivePace * effectiveUnits;
 
   while (ammunitionNeeded > getAmmo()) {

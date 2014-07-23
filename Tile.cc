@@ -67,7 +67,7 @@ void Vertex::fight (int elapsedTime) {
     // Casualties proportional to enemy troops.
     (*v)->m_LossesInfantry = (*v)->enemyTroops * fightRate * elapsedTime;
     // Modified by artillery.
-    (*v)->m_LossesArtillery = (*v)->m_LossesInfantry * artilleryScaleFactor * (*v)->player ? (*v)->artillery.second : (*v)->artillery.first;
+    (*v)->m_LossesArtillery = (*v)->m_LossesInfantry * artilleryScaleFactor * sqrt((*v)->player ? (*v)->artillery.second : (*v)->artillery.first);
     double casualties = (*v)->m_LossesArtillery + (*v)->m_LossesInfantry; 
     if (1e-20 > casualties) continue; 
     if ((*v)->debug) std::cout << (*v)->position << " taking casualties " << casualties << std::endl;
