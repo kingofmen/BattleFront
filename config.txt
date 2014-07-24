@@ -5,6 +5,9 @@ minimumGarrison = 1
 cooldown = 50000
 attrition = 0.01
 artilleryEffect = 1
+aircraftArtilleryBonus = 1
+aircraftInfantryBonus = 0.1
+
 locoDecayDistance = 1000
 locoRepairTime = 1000000 
 ai = {
@@ -48,9 +51,17 @@ baseCost = {
   steel = 1000
 }
 
+sortieCost = {
+  men  = 0.1
+  steel = 0.5 
+  ammo = 1
+  fuel = 1
+}
+
 defaultUnitStructure = {
   regiment = 0
   locomotive = 1
   artillery = 1
   aircraft = 1
 }
+

@@ -9,7 +9,9 @@ double Vertex::fightRate = 0.0000001;
 double Vertex::minimumGarrison = 1; 
 double Vertex::coolDownFactor = 10000;
 double Vertex::attritionRate = 0.01;
-double Vertex::artilleryScaleFactor = 1; 
+double Vertex::artilleryEffect = 1;
+double Vertex::aircraftArtilleryBonus = 1;
+double Vertex::aircraftInfantryBonus = 0.1;
 
 Vertex::Vertex (point p, bool c, double t) 
   : Iterable<Vertex>(this)
@@ -67,8 +69,13 @@ void Vertex::fight (int elapsedTime) {
     // Casualties proportional to enemy troops.
     (*v)->m_LossesInfantry = (*v)->enemyTroops * fightRate * elapsedTime;
     // Modified by artillery.
-    (*v)->m_LossesArtillery = (*v)->m_LossesInfantry * artilleryScaleFactor * sqrt((*v)->player ? (*v)->artillery.second : (*v)->artillery.first);
-    double casualties = (*v)->m_LossesArtillery + (*v)->m_LossesInfantry; 
+    (*v)->m_LossesArtillery = (*v)->m_LossesInfantry * artilleryEffect * sqrt((*v)->player ? (*v)->artillery.second : (*v)->artillery.first);
+    // And aircraft.
+    double sqrtSorties = sqrt((*v)->getEnemySorties((*v)->player));
+    (*v)->m_LossesAircraft = ((*v)->m_LossesInfantry + (*v)->m_LossesArtillery) * aircraftInfantryBonus * sqrtSorties;
+    (*v)->m_LossesAircraft += (*v)->m_LossesArtillery * aircraftArtilleryBonus * sqrtSorties; 
+    
+    double casualties = (*v)->m_LossesArtillery + (*v)->m_LossesInfantry + (*v)->m_LossesAircraft; 
     if (1e-20 > casualties) continue; 
     if ((*v)->debug) std::cout << (*v)->position << " taking casualties " << casualties << std::endl;
     (*v)->troops -= casualties;

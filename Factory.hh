@@ -80,6 +80,10 @@ struct UnitHolder {
 
   void clear (); 
   double getWeight () const {return 1;}
+  int getRegiments () const                   {return m_Units[UnitType::Regiment];}
+  int getLocomotives () const                 {return m_Units[UnitType::Train];}
+  int getArtillery () const                   {return m_Units[UnitType::Battery];}
+  int getAircraft () const                    {return m_Units[UnitType::Squadron];}
   int get (unsigned int idx) const            {return m_Units[idx];}
   int get (UnitType const* const idx) const   {return m_Units[*idx];}
   int& operator[] (unsigned int idx)          {return m_Units[idx];}
@@ -248,7 +252,8 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   void desire (UnitType const* const ut, int amount) {m_UnitsDesired[ut] += amount; if (0 > m_UnitsDesired[ut]) m_UnitsDesired[ut] = 0;}
   
 private:
-  void calculateInfluence (int elapsedTime); 
+  void bombard (int elapsedTime);
+  void sortie (int elapsedTime); 
   double getLoadCapacity () const {return 100;}
   Railroad* getOutgoingRailroad (CargoCar* cargo) const {return cargo->isRawMaterial() ? getOutgoingRailroad(cargo->getMaterial()) : getOutgoingRailroad(cargo->getUnit());}
   Railroad* getOutgoingRailroad (RawMaterial* rm) const;
@@ -272,8 +277,10 @@ private:
   list<Locomotive*> locos;
   vector<Vertex*> m_VerticesInRange;
   
-  static double s_ArtilleryRangeSq; 
+  static double s_ArtilleryRangeSq;
+  static double s_AircraftRangeSq; 
   static RawMaterialHolder s_Structure;
+  static RawMaterialHolder s_SortieCost; 
   static UnitHolder s_DefaultUnitsDesired; 
 };
 

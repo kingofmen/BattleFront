@@ -24,8 +24,10 @@ RawMaterial* RawMaterial::RawMaterial4 = new RawMaterial("ammo", Ammo);
 vector<RawMaterialHolder> Factory::s_ProductionCosts(UnitType::NumUnitTypes);
 RawMaterialHolder Railroad::s_Structure;
 RawMaterialHolder WareHouse::s_Structure;
+RawMaterialHolder WareHouse::s_SortieCost; 
 UnitHolder WareHouse::s_DefaultUnitsDesired;
-double WareHouse::s_ArtilleryRangeSq = 6400; 
+double WareHouse::s_ArtilleryRangeSq = 6400; // 80^2
+double WareHouse::s_AircraftRangeSq = 57600; // 240^2
 vector<CargoCar*> CargoCar::s_AvailableCars; 
 
 Building::Building (point p) 
@@ -170,7 +172,7 @@ bool WareHouse::complete () const {
   return (m_Structure >= s_Structure); 
 }
 
-void WareHouse::calculateInfluence (int elapsedTime) {
+void WareHouse::bombard (int elapsedTime) {
   int effectiveUnits = m_Units[UnitType::Battery];
   if (0 == effectiveUnits) return;
   int effectivePace = m_ArtilleryPace;
@@ -213,6 +215,55 @@ void WareHouse::calculateInfluence (int elapsedTime) {
     (*v)->artillerise(player, ammunitionNeeded);
   }
 }
+
+void WareHouse::sortie (int elapsedTime) {
+  int effectiveUnits = m_Units.getAircraft(); 
+  if (0 == effectiveUnits) return;
+  int effectivePace = m_AirforcePace; 
+  if (0 == effectivePace) return;
+
+  if (0 == m_VerticesInRange.size()) {
+    for (Vertex::Iter v = Vertex::start(); v != Vertex::final(); ++v) {
+      if ((*v)->position.distanceSq(position) > s_AircraftRangeSq) continue;
+      m_VerticesInRange.push_back(*v);
+    }
+  }
+  
+  vector<Vertex*> toShootAt;
+  double totalEnemySorties = 0;
+  for (vector<Vertex*>::iterator v = m_VerticesInRange.begin(); v != m_VerticesInRange.end(); ++v) {
+    if ((*v)->player == player) continue; // Only sortie against enemy vertices
+    if (0 < (*v)->getFrontDistance()) continue; // near the front.
+    toShootAt.push_back(*v);
+    totalEnemySorties += (*v)->getEnemySorties(player);
+  }
+  if (0 == toShootAt.size()) return;
+
+  double timeInSeconds = elapsedTime * 1e-6; // Microseconds to seconds
+  timeInSeconds *= (1 + sqrt(totalEnemySorties));
+  RawMaterialHolder resourcesNeeded = s_SortieCost * timeInSeconds * effectivePace * effectiveUnits;
+
+  while (resourcesNeeded > (*this)) {
+    if (effectiveUnits < 2) break;
+    effectiveUnits--;
+    resourcesNeeded = s_SortieCost * timeInSeconds * effectivePace * effectiveUnits;
+  }
+
+  while (resourcesNeeded > (*this)) {
+    effectivePace--;
+    resourcesNeeded = s_SortieCost * timeInSeconds * effectivePace * effectiveUnits;
+  }
+
+  if (0 == effectivePace) return;
+  (*this) -= resourcesNeeded;
+  double sortiesPerVertexSecond = effectivePace * effectiveUnits;
+  sortiesPerVertexSecond /= toShootAt.size(); 
+  
+  for (vector<Vertex*>::iterator v = toShootAt.begin(); v != toShootAt.end(); ++v) {
+    (*v)->aircraftise(player, sortiesPerVertexSecond); 
+  }
+}
+
 
 Railroad* WareHouse::connect (WareHouse* other) {
   if (!other) return 0; 
@@ -350,7 +401,8 @@ void WareHouse::update (int elapsedTime) {
     (*this) *= 0.5; 
   }
   if (!player) m_ai->update(elapsedTime); 
-  calculateInfluence(elapsedTime); 
+  bombard(elapsedTime);
+  sortie(elapsedTime);
   
   if (!complete()) {
     for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {

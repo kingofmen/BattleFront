@@ -19,8 +19,10 @@ struct Vertex : public Iterable<Vertex> {
   bool debug; 
 
   void artillerise (bool p, double amount) {if (p) artillery.first += amount; else artillery.second += amount;}
+  void aircraftise (bool p, double amount) {if (p) sorties.first += amount; else sorties.second += amount;}
   double enemyControl (bool p) const {return (p == player) ? 0 : 1;}
   double influence (int elapsedTime, double armySize, const point& pos, bool player);
+  double getEnemySorties (bool p) {return p ? sorties.second : sorties.first;}
   int getFrontDistance () const {return frontDistance;} 
   double myControl    (bool p) const {return (p == player) ? 1 : 0;} 
   void renormalise();
@@ -46,8 +48,10 @@ private:
   vector<Vertex*> neighbours; 
   int cooldown;
   double m_LossesInfantry;
-  double m_LossesArtillery; 
-  pair<double, double> artillery; // Ammunition fired, per seoond, by player and AI. 
+  double m_LossesArtillery;
+  double m_LossesAircraft; 
+  pair<double, double> artillery; // Ammunition fired, per seoond, by player and AI.
+  pair<double, double> sorties; // Aircraft sorties, per seoond, by player and AI. 
   
   static void countTroops (); 
 
@@ -56,7 +60,9 @@ private:
   static double fightRate; 
   static double minimumGarrison; 
   static double attritionRate;
-  static double artilleryScaleFactor; 
+  static double artilleryEffect;
+  static double aircraftArtilleryBonus;
+  static double aircraftInfantryBonus; 
 };
 
 struct Tile {

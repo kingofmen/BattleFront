@@ -60,7 +60,17 @@ void StaticInitialiser::initialise () {
   Vertex::minimumGarrison = config->safeGetFloat("minimumGarrison", Vertex::minimumGarrison); 
   Vertex::coolDownFactor = config->safeGetFloat("cooldown", Vertex::coolDownFactor); 
   Vertex::attritionRate = config->safeGetFloat("attrition", Vertex::attritionRate);
-  Vertex::artilleryScaleFactor = config->safeGetFloat("artilleryEffect", Vertex::artilleryScaleFactor);
+  Vertex::artilleryEffect = config->safeGetFloat("artilleryEffect", Vertex::artilleryEffect);
+  Vertex::aircraftArtilleryBonus = config->safeGetFloat("aircraftArtilleryBonus", Vertex::aircraftArtilleryBonus);
+  Vertex::aircraftInfantryBonus = config->safeGetFloat("aircraftInfantryBonus", Vertex::aircraftInfantryBonus);
+  WareHouse::s_ArtilleryRangeSq = pow(config->safeGetFloat("artilleryRange", sqrt(WareHouse::s_ArtilleryRangeSq)), 2);
+  WareHouse::s_AircraftRangeSq = pow(config->safeGetFloat("aircraftRange", sqrt(WareHouse::s_AircraftRangeSq)), 2);
+  Object* sortieCost = config->safeGetObject("sortieCost");
+  if (sortieCost) loadRawMaterials(sortieCost, &(WareHouse::s_SortieCost));
+  else {
+    WareHouse::s_SortieCost[RawMaterial::Fuel] = 1;
+    WareHouse::s_SortieCost[RawMaterial::Ammo] = 1;
+  }
 
   Object* ai = config->getNeededObject("ai");
   WarehouseAI::defcon5 = ai->safeGetInt("defcon5", WarehouseAI::defcon5);
