@@ -60,8 +60,11 @@ public:
   UnitType (string n, string d, int i, bool f = false) : Enumerable<UnitType>(this, n, i, f), m_DisplayName(d) {} 
   string getDisplayName () const {return m_DisplayName;}
 
-  bool isTrain () const {return (getIdx() == Train);}
+  bool isAircraft () const {return (Squadron == getIdx());}
+  bool isArtillery () const {return (Battery == getIdx());}
+  bool isTrain () const {return (Train == getIdx());}
 
+  static UnitType const* const getAircraft () {return UnitAircraft;} 
   static UnitType const* const getArtillery () {return UnitArtillery;} 
   static UnitType const* const getRegiment () {return UnitRegiment;}
   static UnitType const* const getTrain () {return UnitLocomotive;}
@@ -250,6 +253,7 @@ struct WareHouse : public Building, public RawMaterialHolder, public Iterable<Wa
   void toggleRail ();
   void update (int elapsedTime);
   void desire (UnitType const* const ut, int amount) {m_UnitsDesired[ut] += amount; if (0 > m_UnitsDesired[ut]) m_UnitsDesired[ut] = 0;}
+  void changePace (UnitType const* const ut, int amount); 
   
 private:
   void bombard (int elapsedTime);
@@ -278,7 +282,9 @@ private:
   vector<Vertex*> m_VerticesInRange;
   
   static double s_ArtilleryRangeSq;
-  static double s_AircraftRangeSq; 
+  static double s_AircraftRangeSq;
+  static int s_MaxArtilleryPace; 
+  static int s_MaxAirforcePace;
   static RawMaterialHolder s_Structure;
   static RawMaterialHolder s_SortieCost; 
   static UnitHolder s_DefaultUnitsDesired; 

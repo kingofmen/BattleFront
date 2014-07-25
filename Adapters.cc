@@ -3,29 +3,33 @@
 #include "Graphics.hh"
 #include "Button.hh" 
 
-Button** ProducerButtonAdapter::increase = 0;
-Button** ProducerButtonAdapter::decrease = 0;
+Button** ProducerButtonAdapter::s_Increase = 0;
+Button** ProducerButtonAdapter::s_Decrease = 0;
 ProducerButtonAdapter* ProducerButtonAdapter::instance = 0;
 Button** FactoryButtonAdapter::orderUnits = 0;
 FactoryButtonAdapter* FactoryButtonAdapter::instance = 0; 
-Button** WarehouseButtonAdapter::increaseUnits = 0;
-Button** WarehouseButtonAdapter::decreaseUnits = 0;
+Button** WarehouseButtonAdapter::s_IncreaseUnits = 0;
+Button** WarehouseButtonAdapter::s_DecreaseUnits = 0;
 WarehouseButtonAdapter* WarehouseButtonAdapter::instance = 0; 
+Button* WarehouseButtonAdapter::s_IncArtillery = 0;
+Button* WarehouseButtonAdapter::s_DecArtillery = 0;
+Button* WarehouseButtonAdapter::s_IncAircraft = 0;
+Button* WarehouseButtonAdapter::s_DecAircraft = 0;
 
 
 ProducerButtonAdapter* ProducerButtonAdapter::getInstance () {
   if (instance) return instance;
   instance = new ProducerButtonAdapter();
-  increase = new Button*[RawMaterial::NumRawMaterials];
-  decrease = new Button*[RawMaterial::NumRawMaterials];
+  s_Increase = new Button*[RawMaterial::NumRawMaterials];
+  s_Decrease = new Button*[RawMaterial::NumRawMaterials];
   for (RawMaterial::Iter r = RawMaterial::start(); r != RawMaterial::final(); ++r) {
-    increase[**r] = new Button(120, 15 + (**r)*25, 20, 20);
-    increase[**r]->registerListener(instance);
-    decrease[**r] = new Button(10, 15 + (**r)*25, 20, 20);
-    decrease[**r]->registerListener(instance);
+    s_Increase[**r] = new Button(120, 15 + (**r)*25, 20, 20);
+    s_Increase[**r]->registerListener(instance);
+    s_Decrease[**r] = new Button(10, 15 + (**r)*25, 20, 20);
+    s_Decrease[**r]->registerListener(instance);
 
-    new ButtonGraphics(increase[**r]);
-    new ButtonGraphics(decrease[**r]);
+    new ButtonGraphics(s_Increase[**r]);
+    new ButtonGraphics(s_Decrease[**r]);
   }
 }
 
@@ -37,16 +41,16 @@ void ProducerButtonAdapter::clicked (unsigned int buttonId) {
   if (!rmp) return; 
   
   for (RawMaterial::Iter r = RawMaterial::start(); r != RawMaterial::final(); ++r) {
-    if      (buttonId == increase[**r]->getIdx()) {rmp->increaseProduction(*r); break;}
-    else if (buttonId == decrease[**r]->getIdx()) {rmp->decreaseProduction(*r); break;}
+    if      (buttonId == s_Increase[**r]->getIdx()) {rmp->increaseProduction(*r); break;}
+    else if (buttonId == s_Decrease[**r]->getIdx()) {rmp->decreaseProduction(*r); break;}
   }
   
 }
 
 void ProducerButtonAdapter::setActive (bool act) {
   for (UnitType::Iter r = UnitType::start(); r != UnitType::final(); ++r) {
-    increase[**r]->setActive(act);
-    decrease[**r]->setActive(act);
+    s_Increase[**r]->setActive(act);
+    s_Decrease[**r]->setActive(act);
   }
 }
 
@@ -85,17 +89,34 @@ void FactoryButtonAdapter::setActive (bool act) {
 WarehouseButtonAdapter* WarehouseButtonAdapter::getInstance () {
   if (instance) return instance;
   instance = new WarehouseButtonAdapter();
-  increaseUnits = new Button*[UnitType::NumUnitTypes];
-  decreaseUnits = new Button*[UnitType::NumUnitTypes];
+  s_IncreaseUnits = new Button*[UnitType::NumUnitTypes];
+  s_DecreaseUnits = new Button*[UnitType::NumUnitTypes];
   for (UnitType::Iter r = UnitType::start(); r != UnitType::final(); ++r) {
-    increaseUnits[**r] = new Button(165, 130 + (**r)*25, 20, 20);
-    increaseUnits[**r]->registerListener(instance);
-    new ButtonGraphics(increaseUnits[**r]);
+    s_IncreaseUnits[**r] = new Button(165, 130 + (**r)*25, 20, 20);
+    s_IncreaseUnits[**r]->registerListener(instance);
+    new ButtonGraphics(s_IncreaseUnits[**r]);
 
-    decreaseUnits[**r] = new Button(110, 130 + (**r)*25, 20, 20);
-    decreaseUnits[**r]->registerListener(instance);
-    new ButtonGraphics(decreaseUnits[**r]);    
+    s_DecreaseUnits[**r] = new Button(110, 130 + (**r)*25, 20, 20);
+    s_DecreaseUnits[**r]->registerListener(instance);
+    new ButtonGraphics(s_DecreaseUnits[**r]);    
   }
+
+  s_IncArtillery = new Button(255, 130, 20, 20);
+  s_DecArtillery = new Button(200, 130, 20, 20);
+  s_IncAircraft = new Button(255, 155, 20, 20);
+  s_DecAircraft = new Button(200, 155, 20, 20);
+
+  new ButtonGraphics(s_IncArtillery);
+  new ButtonGraphics(s_DecArtillery);  
+  new ButtonGraphics(s_IncAircraft);
+  new ButtonGraphics(s_DecAircraft);  
+
+  s_IncArtillery->registerListener(instance);
+  s_DecArtillery->registerListener(instance);
+  s_IncAircraft->registerListener(instance);
+  s_DecAircraft->registerListener(instance);
+
+  
 }
 
 void WarehouseButtonAdapter::clicked (unsigned int buttonId) {
@@ -105,22 +126,44 @@ void WarehouseButtonAdapter::clicked (unsigned int buttonId) {
   // But if it does, fail gracefully, if silently.
   if (!fac) return; 
   for (UnitType::Iter r = UnitType::start(); r != UnitType::final(); ++r) {
-    if (buttonId == increaseUnits[**r]->getIdx()) {
+    if (buttonId == s_IncreaseUnits[**r]->getIdx()) {
       fac->desire(*r, 1);
-      break;
+      return;
     }
-    else if (buttonId == decreaseUnits[**r]->getIdx()) {
+    else if (buttonId == s_DecreaseUnits[**r]->getIdx()) {
       fac->desire(*r, -1);
-      break;  
+      return; 
     }
+  }
+
+  if (buttonId == s_IncArtillery->getIdx()) {
+    fac->changePace(UnitType::getArtillery(), 1);
+    return;
+  }
+  if (buttonId == s_DecArtillery->getIdx()) {
+    fac->changePace(UnitType::getArtillery(), -1);
+    return;
+  }
+  if (buttonId == s_IncAircraft->getIdx()) {
+    fac->changePace(UnitType::getAircraft(), 1);
+    return;
+  }
+  if (buttonId == s_DecAircraft->getIdx()) {
+    fac->changePace(UnitType::getAircraft(), -1);
+    return;
   }
   
 }
 
 void WarehouseButtonAdapter::setActive (bool act) {
   for (UnitType::Iter r = UnitType::start(); r != UnitType::final(); ++r) {
-    increaseUnits[**r]->setActive(act);
-    decreaseUnits[**r]->setActive(act);
+    s_IncreaseUnits[**r]->setActive(act);
+    s_DecreaseUnits[**r]->setActive(act);
   }
+  s_IncArtillery->setActive(act);
+  s_DecArtillery->setActive(act);
+  s_IncAircraft->setActive(act);
+  s_DecAircraft->setActive(act);
+
 }
 

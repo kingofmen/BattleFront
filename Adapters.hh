@@ -12,8 +12,8 @@ public:
   
 private:
   ProducerButtonAdapter () {}
-  static Button** increase;
-  static Button** decrease;
+  static Button** s_Increase;
+  static Button** s_Decrease;
   static ProducerButtonAdapter* instance; 
 };
 
@@ -37,8 +37,12 @@ public:
   
 private:
   WarehouseButtonAdapter () {}
-  static Button** increaseUnits;
-  static Button** decreaseUnits; 
+  static Button** s_IncreaseUnits;
+  static Button** s_DecreaseUnits;
+  static Button* s_IncArtillery;
+  static Button* s_DecArtillery;
+  static Button* s_IncAircraft;
+  static Button* s_DecAircraft;
   static WarehouseButtonAdapter* instance; 
 };
 

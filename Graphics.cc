@@ -104,7 +104,19 @@ void WareHouseGraphics::drawSpecial () const {
     textXPos += smallLetters->getWidth(smallLetters->renderText(" / ", textXPos, textYPos));
     textXPos += smallLetters->renderInt(m_Drawable->m_UnitsDesired.get(*u), textXPos, textYPos);
     textYPos += 25; 
-  }    
+  }
+
+  smallLetters->renderText("Pace", 230, 110); 
+  textYPos = 124;
+  textXPos = 224;									    
+  textXPos += smallLetters->renderInt(m_Drawable->m_ArtilleryPace, textXPos, textYPos);
+  textXPos += smallLetters->getWidth(smallLetters->renderText(" / ", textXPos, textYPos));
+  textXPos += smallLetters->renderInt(WareHouse::s_MaxArtilleryPace, textXPos, textYPos);
+  textYPos += 25;
+  textXPos = 224;									    
+  textXPos += smallLetters->renderInt(m_Drawable->m_AirforcePace, textXPos, textYPos);
+  textXPos += smallLetters->getWidth(smallLetters->renderText(" / ", textXPos, textYPos));
+  textXPos += smallLetters->renderInt(WareHouse::s_MaxAirforcePace, textXPos, textYPos);
 }
 
 void WareHouseGraphics::toggle (Overlay over) {

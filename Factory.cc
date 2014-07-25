@@ -28,6 +28,8 @@ RawMaterialHolder WareHouse::s_SortieCost;
 UnitHolder WareHouse::s_DefaultUnitsDesired;
 double WareHouse::s_ArtilleryRangeSq = 6400; // 80^2
 double WareHouse::s_AircraftRangeSq = 57600; // 240^2
+int WareHouse::s_MaxArtilleryPace = 3;
+int WareHouse::s_MaxAirforcePace = 3;
 vector<CargoCar*> CargoCar::s_AvailableCars; 
 
 Building::Building (point p) 
@@ -167,6 +169,19 @@ void UnitHolder::clear () {
   }
 }
 
+
+void WareHouse::changePace (UnitType const* const ut, int amount) {
+  if (ut->isAircraft()) {
+    m_AirforcePace += amount;
+    if (m_AirforcePace < 0) m_AirforcePace = 0;
+    else if (m_AirforcePace > s_MaxAirforcePace) m_AirforcePace = s_MaxAirforcePace; 
+  }
+  else if (ut->isArtillery()) {
+    m_ArtilleryPace += amount;
+    if (m_ArtilleryPace < 0) m_ArtilleryPace = 0;
+    else if (m_ArtilleryPace > s_MaxArtilleryPace) m_ArtilleryPace = s_MaxArtilleryPace; 
+  }
+}
 
 bool WareHouse::complete () const {
   return (m_Structure >= s_Structure); 
@@ -387,6 +402,7 @@ Railroad* WareHouse::getOutgoingRailroad (RawMaterial* rm) const {
   }    
   return 0; 
 }
+
 Railroad* WareHouse::getOutgoingRailroad (UnitType const* const ut) const {
   if ((!activeRail) || (!activeRail->complete())) return 0;
   if (m_Units.get(ut) <= m_UnitsDesired.get(ut)) return 0; 
