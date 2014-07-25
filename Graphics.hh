@@ -71,11 +71,14 @@ public:
   WareHouseGraphics (WareHouse* w);
   ~WareHouseGraphics ();
 
+  enum Overlay {Artillery, Aircraft, NumOverlays};
+  
   void draw () const;
   void drawSpecial () const; 
-
+  static void toggle (Overlay over);
+  
 private:
-
+  static bool s_Overlays[];
 }; 
 
 class ProducerGraphics : public Graphics<ProducerGraphics, RawMaterialProducer> {

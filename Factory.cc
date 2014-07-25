@@ -418,7 +418,7 @@ void WareHouse::update (int elapsedTime) {
     }
   }
 
-  if (m_Units[UnitType::Regiment] > m_UnitsDesired[UnitType::Regiment]) {
+  if ((m_Units[UnitType::Regiment] > m_UnitsDesired[UnitType::Regiment]) && (!getOutgoingRailroad(UnitType::getRegiment()))) {
     int release = m_Units[UnitType::Regiment] - m_UnitsDesired[UnitType::Regiment];
     releaseTroops(250*release);
     m_Units[UnitType::Regiment] = m_UnitsDesired[UnitType::Regiment]; 

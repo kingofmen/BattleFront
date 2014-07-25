@@ -2,6 +2,8 @@
 
 const double internalToDisplay = 1e6;
 
+bool WareHouseGraphics::s_Overlays[WareHouseGraphics::NumOverlays]; 
+
 FactoryGraphics::FactoryGraphics (Factory* f)
   : Graphics<FactoryGraphics, Factory>(this, f)
 {}
@@ -48,6 +50,15 @@ void FactoryGraphics::drawSpecial () const {
   smallLetters->renderText("Regiment", xpos, ypos);
 }
 
+void drawCircle (point center, double radius) {
+  glBegin(GL_POINTS);
+  for (double rad = 0; rad < 2*M_PI; rad += 0.01) {
+    glVertex2d(center.x() + radius*sin(rad), center.y() + radius*cos(rad)); 
+  }
+  glEnd();
+}
+
+
 void WareHouseGraphics::draw () const {
   if (m_Drawable->player) glColor3d(0.0, 0.0, 0.2 + 0.8*m_Drawable->getCompFraction());
   else glColor3d(0.2 + 0.8*m_Drawable->getCompFraction(), 0.0, 0.0);
@@ -56,7 +67,15 @@ void WareHouseGraphics::draw () const {
     glVertex2d(m_Drawable->position.x() + 0.0, m_Drawable->position.y() + 9.3 + 1.5);
     glVertex2d(m_Drawable->position.x() + 8.0, m_Drawable->position.y() - 6.7 + 1.5);
     glVertex2d(m_Drawable->position.x() - 8.0, m_Drawable->position.y() - 6.7 + 1.5);
-  } glEnd();   
+  } glEnd();
+
+  glColor3d(1.0, 1.0, 1.0);  
+  if (s_Overlays[Artillery]) {
+    drawCircle(m_Drawable->position, sqrt(WareHouse::s_ArtilleryRangeSq));
+  }
+  if (s_Overlays[Aircraft]) {
+    drawCircle(m_Drawable->position, sqrt(WareHouse::s_AircraftRangeSq));
+  }  
 }
 
 void WareHouseGraphics::drawSpecial () const {
@@ -86,6 +105,10 @@ void WareHouseGraphics::drawSpecial () const {
     textXPos += smallLetters->renderInt(m_Drawable->m_UnitsDesired.get(*u), textXPos, textYPos);
     textYPos += 25; 
   }    
+}
+
+void WareHouseGraphics::toggle (Overlay over) {
+  s_Overlays[over] = !s_Overlays[over];
 }
 
 void ProducerGraphics::draw () const {

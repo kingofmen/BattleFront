@@ -33,7 +33,8 @@ const int gridWidth = windowWidth / tileSize;
 const int gridHeight = windowHeight / tileSize;
 
 bool show_cooldown = false;
-bool show_artillery = false; 
+bool show_artillery = false;
+bool show_aircraft = false; 
 bool show_aidebug = false;
 StringLibrary* bigLetters = 0;
 StringLibrary* smallLetters = 0;
@@ -42,6 +43,7 @@ GameState currentState = Running;
 ProducerButtonAdapter* producerButtonAdapter = 0;
 FactoryButtonAdapter* factoryButtonAdapter = 0;
 WarehouseButtonAdapter* warehouseButtonAdapter = 0; 
+
 
 void drawTiles () {
   static const double invMaxTroops = 0.2; 
@@ -74,8 +76,20 @@ void drawTiles () {
       glColor3d(20.2*artillery, 20.2*artillery, 20.2*artillery); 
       glVertex2d((*v)->position.x(), (*v)->position.y());
     }
-    glEnd(); 
+    glEnd();
+    smallLetters->renderText("Artillery", 900, 10);
+  }
 
+  if (show_aircraft) {
+    glBegin(GL_POINTS);
+    for (Vertex::Iter v = Vertex::start(); v != Vertex::final(); ++v) {
+      double artillery = (*v)->m_LossesAircraft; 
+      if (0 >= artillery) continue; 
+      glColor3d(20.2*artillery, 20.2*artillery, 20.2*artillery); 
+      glVertex2d((*v)->position.x(), (*v)->position.y());      
+    }
+    glEnd();
+    smallLetters->renderText("Aircraft", 900, 30);
   }
 }
 
@@ -97,8 +111,7 @@ void drawFactories () {
       if ((*w)->player) continue;
       smallLetters->renderInt((*w)->m_ai->threatLevel, (*w)->position.x(), (*w)->position.y()); 
     }
-  }
-    
+  }  
 }
 
 void drawRailroads () {
@@ -176,7 +189,8 @@ void handleKeyPress (SDL_KeyboardEvent& key) {
   case SDLK_q: currentState = Quit;  break;
   case SDLK_c: show_cooldown = !show_cooldown; break;
   case SDLK_a: show_aidebug = !show_aidebug; break;
-  case SDLK_r: show_artillery = !show_artillery; break; 
+  case SDLK_r: show_artillery = !show_artillery; WareHouseGraphics::toggle(WareHouseGraphics::Artillery); break;
+  case SDLK_l: show_aircraft = !show_aircraft; WareHouseGraphics::toggle(WareHouseGraphics::Aircraft); break; 
   case SDLK_ESCAPE:
     selectWarehouse(0);
     selectProducer(0);
