@@ -84,10 +84,12 @@ CargoCar::~CargoCar () {}
 
 WarehouseAI::WarehouseAI (WareHouse* w)
   : m_WareHouse(w)
+  , m_rmp(0)
+  , m_factory(0)
   , reinforceTarget(0)
   , reinforcePercentage(0)
-  , statusChanged(false)
   , connection(0)
+  , ms_sinceRmpEval(rand() % 1000000)
 {}
 
 WareHouse::WareHouse (point p) 
@@ -417,10 +419,12 @@ void WareHouse::update (int elapsedTime) {
     (*this) *= 0.5; 
   }
   if (!player) m_ai->update(elapsedTime); 
-  bombard(elapsedTime);
-  sortie(elapsedTime);
   
-  if (!complete()) {
+  if (complete()) {
+    bombard(elapsedTime);
+    sortie(elapsedTime);
+  }
+  else {
     for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
       double amount = getNeededAmount(*i);
       if (0 >= amount) continue;
@@ -615,8 +619,8 @@ void Factory::produce (int elapsedTime) {
     setCurrentProduction();
     m_UsedSoFar.clear();
   }
-  double currThroughput = elapsedTime * m_Throughput;
-  RawMaterialHolder wantToUse = m_NormalisedCost * currThroughput;
+  RawMaterialHolder wantToUse = getCurrentNeed();
+  wantToUse *= elapsedTime; 
 
   if (m_WareHouse >= wantToUse) {
     unableToProgress = 0;
@@ -757,6 +761,18 @@ void Railroad::update (int elapsedTime) {
   }
 }
 
+void WarehouseAI::considerRmp () {
+  // Set raw-material priorities of attached RMP.
+  if (!m_rmp) return; // Should never happen.
+
+  RawMaterialHolder neededForNextSecond;
+  if (m_factory) {
+    neededForNextSecond += m_factory->getCurrentNeed() * 1000; 
+  }
+
+  m_rmp->setAllProduction(neededForNextSecond);
+}
+
 void WarehouseAI::globalAI () {
   // Search for non-player warehouse that needs reinforcement.
 
@@ -826,26 +842,14 @@ void WarehouseAI::setReinforceTarget (WareHouse* t) {
   assert(connection); 
 }
 
-void WarehouseAI::notify (int size, Action act) {
-  packets.push_back(pair<int, Action>(size, act));
-  if (packets.size() > 50) packets.pop_front();
-  statusChanged = true; 
-}
-
-void WarehouseAI::update (int elapsedTime) {
-  if (!statusChanged) return;
-  statusChanged = false; 
-
-  if (!reinforceTarget) return;
-  double total = 0;
-  double reinforced = 0;
-  for (list<pair<int, Action> >::iterator p = packets.begin(); p != packets.end(); ++p) {
-    total += (*p).first;
-    if (Passed == (*p).second) reinforced += (*p).first;
+void WarehouseAI::update (int ms_elapsedTime) {
+  if (m_rmp) {
+    ms_sinceRmpEval += ms_elapsedTime;
+    if (ms_sinceRmpEval > 1e6) {
+      ms_sinceRmpEval = 0;
+      considerRmp(); 
+    }
   }
-  reinforced /= total;
-  if (reinforced > reinforcePercentage) m_WareHouse->activeRail = 0;
-  else m_WareHouse->activeRail = connection;
 }
 
 RawMaterialHolder::RawMaterialHolder () :
@@ -895,10 +899,15 @@ void RawMaterialProducer::decreaseProduction (RawMaterial* rm) {
   setProduction(rm, newProduction);
 }
 
+void RawMaterialProducer::setAllProduction (RawMaterialHolder& rmh) {
+  curProduction = rmh;
+  curProduction.normalise(); 
+}
+
 void RawMaterialProducer::setProduction (RawMaterial* rm, double prod) {
   if (prod >= 1) {
     curProduction.clear();
-    curProduction[*rm] = prod;
+    curProduction[*rm] = 1.0; 
     return; 
   }
 

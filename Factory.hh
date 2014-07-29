@@ -9,7 +9,9 @@ using namespace std;
 class Tile; 
 class Object;
 struct WareHouse;
-struct Vertex; 
+struct Vertex;
+struct Factory;
+struct RawMaterialProducer; 
 
 class RawMaterial : public Enumerable<RawMaterial> {
 public:
@@ -207,24 +209,28 @@ class WarehouseAI {
   friend void drawFactories ();
   friend class StaticInitialiser;  
 public:
-  WarehouseAI (WareHouse* w);
-  enum Action {Passed, Released, Held};
+  WarehouseAI (WareHouse* w); 
   
-  static void globalAI (); 
-  void notify (int size, Action act);
-  void setReinforceTarget (WareHouse* t); 
-  void update (int elapsedTime); 
+  static void globalAI ();
+  void setFactory (Factory* f) {m_factory = f;}  
+  void setReinforceTarget (WareHouse* t);
+  void setRmp (RawMaterialProducer* rmp) {m_rmp = rmp;} 
+  void update (int ms_ElapsedTime); 
+  
   
   
 private:
+  void considerRmp (); 
+  
   WareHouse* m_WareHouse;
+  RawMaterialProducer* m_rmp;
+  Factory* m_factory; 
   WareHouse* reinforceTarget;
   double reinforcePercentage;
-  bool statusChanged; 
   Railroad* connection;
-  list<pair<int, Action> > packets;
   int threatLevel;
-
+  int ms_sinceRmpEval; 
+  
   static int defcon5;
   static int defcon4;
   static int defcon3;
@@ -300,6 +306,7 @@ public:
   void produce (int elapsedTime); // In microseconds
   void increaseProduction (RawMaterial* rm);
   void decreaseProduction (RawMaterial* rm);
+  void setAllProduction (RawMaterialHolder& rmh); 
   
 private:
   void setProduction (RawMaterial* rm, double prod);
@@ -312,7 +319,7 @@ private:
 
 struct Factory : public Building, public Iterable<Factory> {
   friend class StaticInitialiser; 
-  friend class FactoryGraphics; 
+  friend class FactoryGraphics;
   
   Factory (point p);
   WareHouse m_WareHouse; 
@@ -320,6 +327,7 @@ struct Factory : public Building, public Iterable<Factory> {
   double getCompletion () const;   
   void orderUnit (UnitType const* const u); 
   void produce (int elapsedTime);
+  RawMaterialHolder getCurrentNeed () const {return m_NormalisedCost * m_Throughput;} // Per microsecond. 
   
 private:
   void doneProducing (); 

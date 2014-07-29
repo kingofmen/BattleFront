@@ -12,6 +12,7 @@ void StaticInitialiser::createFactory (Object* fact) {
   fac->player = (fact->safeGetString("human", "no") == "yes");
   fac->m_Throughput = fact->safeGetFloat("throughput") * displayToInternal; // Per second in the file, per microsecond internally. 
   fac->m_WareHouse.player = fac->player;
+  fac->m_WareHouse.m_ai->setFactory(fac);
   for (RawMaterial::Iter i = RawMaterial::start(); i != RawMaterial::final(); ++i) {
     fac->m_WareHouse.m_Structure[**i] = fac->m_WareHouse.getStructureAmount(*i);
   }
@@ -22,6 +23,7 @@ void StaticInitialiser::createFactory (Object* fact) {
     rmp->player = fac->player; 
     createRawMaterialProducer(rawMaterials, rmp);
     new ProducerGraphics(rmp);
+    fac->m_WareHouse.m_ai->setRmp(rmp); 
   }
   new WareHouseGraphics(&(fac->m_WareHouse)); 
 }
